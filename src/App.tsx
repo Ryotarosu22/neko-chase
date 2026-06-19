@@ -8,6 +8,7 @@ import {
 import { getCpuCatDecisions, getCpuMouseDecision } from './cpuLogic';
 
 import ModeSelect from './components/ModeSelect';
+import PrivacyPolicy from './components/PrivacyPolicy';
 import HandoffScreen from './components/HandoffScreen';
 import Board from './components/Board';
 import GameHeader from './components/GameHeader';
@@ -59,6 +60,7 @@ function unoccupiedCatSquares(placed: Position[]): Position[] {
 
 export default function App() {
   const [game, setGame] = useState<GameState | null>(null);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [pendingMouseMove, setPendingMouseMove] = useState<Position | null>(null);
   const cpuTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -306,7 +308,10 @@ export default function App() {
   }
 
   // ── Render ──
-  if (!game) return <ModeSelect onStart={handleStart} />;
+  if (!game) {
+    if (showPrivacy) return <PrivacyPolicy onBack={() => setShowPrivacy(false)} />;
+    return <ModeSelect onStart={handleStart} onPrivacy={() => setShowPrivacy(true)} />;
+  }
 
   // Game over: show board with full route revealed + overlay panel
   if (game.screen === 'game_over' && game.winner && game.winReason) {

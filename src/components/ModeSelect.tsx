@@ -2,9 +2,10 @@ import { GameMode } from '../types';
 
 interface Props {
   onStart: (mode: GameMode) => void;
+  onPrivacy: () => void;
 }
 
-export default function ModeSelect({ onStart }: Props) {
+export default function ModeSelect({ onStart, onPrivacy }: Props) {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-6 px-6 bg-amber-50">
       <div className="text-center animate-bounce-in">
@@ -42,6 +43,13 @@ export default function ModeSelect({ onStart }: Props) {
         <p className="font-semibold mb-1">🎮 遊び方</p>
         <p>ネコは3匹のニャンコを動かして捜索。ネズミは11ターン逃げ切れば勝ち！</p>
       </div>
+
+      <button
+        onClick={onPrivacy}
+        className="text-xs text-amber-500 underline mt-2"
+      >
+        プライバシーポリシー
+      </button>
     </div>
   );
 }

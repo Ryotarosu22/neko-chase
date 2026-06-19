@@ -84,10 +84,8 @@ export default function App() {
 
   const searchableBuildings = (() => {
     if (game?.screen !== 'cat_acting' || isCpuCats(game.mode)) return [];
-    const all = getSearchableBuildings(game.catPositions[game.currentCatIndex]);
-    // Mouse can never return to trail marker positions → remove them
-    const trailPositions = game.trailMarkers.map((m) => m.position);
-    return all.filter((b) => !inList(b, trailPositions));
+    // Cats can search any adjacent building (including trail positions — cat player doesn't know where trails are)
+    return getSearchableBuildings(game.catPositions[game.currentCatIndex]);
   })();
 
   const setupValidMoves: Position[] =
@@ -314,7 +312,7 @@ export default function App() {
   if (game.screen === 'game_over' && game.winner && game.winReason) {
     return (
       <div className="flex flex-col h-full max-w-lg mx-auto">
-        <GameHeader round={game.round} screen={game.screen} currentCatIndex={game.currentCatIndex} />
+        <GameHeader round={game.round} screen={game.screen} currentCatIndex={game.currentCatIndex} onQuit={() => setGame(null)} />
         <div className="flex-1 relative overflow-hidden flex items-center">
           <Board
             mousePosition={game.mousePosition}
@@ -350,7 +348,7 @@ export default function App() {
   // Board view
   return (
     <div className="flex flex-col h-full max-w-lg mx-auto">
-      <GameHeader round={game.round} screen={game.screen} currentCatIndex={game.currentCatIndex} />
+      <GameHeader round={game.round} screen={game.screen} currentCatIndex={game.currentCatIndex} onQuit={() => setGame(null)} />
 
       <div className="flex-1 relative overflow-hidden flex items-center">
         <Board

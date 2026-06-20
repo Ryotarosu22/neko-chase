@@ -45,6 +45,7 @@ export interface GameState {
   knownEmpty: Position[];         // buildings searched by cats and found empty
   round: number;
   currentCatIndex: number;
+  remainingCats: number[];   // cats that haven't acted yet this round
   selectedCat: number | null;
   catSubAction: CatSubAction;
   searchResult: SearchResult | null;

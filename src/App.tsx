@@ -38,6 +38,7 @@ function createGame(mode: GameMode): GameState {
     knownEmpty: [],
     round: 1,
     currentCatIndex: 0,
+    remainingCats: [0, 1, 2],
     selectedCat: null,
     catSubAction: 'idle',
     searchResult: null,
@@ -80,14 +81,13 @@ export default function App() {
   const validCatMoves =
     isCatSetup && game
       ? unoccupiedCatSquares(game.catPositions)
-      : game?.screen === 'cat_acting' && !isCpuCats(game.mode) && game.round < MAX_ROUNDS
-      ? getValidCatMoves(game.currentCatIndex, game.catPositions)
+      : game?.screen === 'cat_acting' && !isCpuCats(game.mode) && game.selectedCat !== null && game.round < MAX_ROUNDS
+      ? getValidCatMoves(game.selectedCat, game.catPositions)
       : [];
 
   const searchableBuildings = (() => {
-    if (game?.screen !== 'cat_acting' || isCpuCats(game.mode)) return [];
-    // Cats can search any adjacent building (including trail positions — cat player doesn't know where trails are)
-    return getSearchableBuildings(game.catPositions[game.currentCatIndex]);
+    if (game?.screen !== 'cat_acting' || isCpuCats(game.mode) || game.selectedCat === null) return [];
+    return getSearchableBuildings(game.catPositions[game.selectedCat]);
   })();
 
   const setupValidMoves: Position[] =
@@ -107,15 +107,15 @@ export default function App() {
       if (decision.action === 'move' && decision.targetPosition) {
         const newCats = [...prev.catPositions];
         newCats[prev.currentCatIndex] = decision.targetPosition;
-        const next = prev.currentCatIndex + 1;
-        if (next >= NUM_CATS) {
+        const newRemaining = prev.remainingCats.filter((i) => i !== prev.currentCatIndex);
+        if (newRemaining.length === 0) {
           if (prev.round >= MAX_ROUNDS) {
             const finalTrail = prev.mousePosition ? [...prev.trailMarkers, { position: prev.mousePosition, turn: prev.trailMarkers.length + 1, discovered: false }] : prev.trailMarkers;
             return { ...prev, catPositions: newCats, trailMarkers: finalTrail, screen: 'game_over', winner: 'mouse', winReason: 'escaped' };
           }
-          return { ...prev, catPositions: newCats, screen: 'mouse_moving', currentCatIndex: 0, catSubAction: 'idle', selectedCat: null, round: prev.round + 1 };
+          return { ...prev, catPositions: newCats, remainingCats: [0, 1, 2], screen: 'mouse_moving', currentCatIndex: 0, catSubAction: 'idle', selectedCat: null, round: prev.round + 1 };
         }
-        return { ...prev, catPositions: newCats, currentCatIndex: next };
+        return { ...prev, catPositions: newCats, remainingCats: newRemaining, currentCatIndex: newRemaining[0] };
       }
 
       if (decision.action === 'search' && decision.searchBuilding) {
@@ -182,17 +182,15 @@ export default function App() {
         if (prev.searchResult?.found) {
           return { ...prev, screen: 'game_over', winner: 'cat', winReason: 'caught' };
         }
-        const catIdx = prev.searchResult?.catIndex ?? 0;
-        const next = catIdx + 1;
-        if (next >= NUM_CATS) {
+        if (prev.remainingCats.length === 0) {
           if (prev.round >= MAX_ROUNDS) {
             const finalTrail = prev.mousePosition ? [...prev.trailMarkers, { position: prev.mousePosition, turn: prev.trailMarkers.length + 1, discovered: false }] : prev.trailMarkers;
             return { ...prev, trailMarkers: finalTrail, screen: 'game_over', winner: 'mouse', winReason: 'escaped', searchResult: null };
           }
-          const goToMouse = isCpuMouse(prev.mode) ? 'mouse_moving' : isCpuCats(prev.mode) ? 'mouse_moving' : 'handoff_to_mouse';
-          return { ...prev, screen: goToMouse, currentCatIndex: 0, catSubAction: 'idle', selectedCat: null, round: prev.round + 1, searchResult: null };
+          const goToMouse = isCpuMouse(prev.mode) || isCpuCats(prev.mode) ? 'mouse_moving' : 'handoff_to_mouse';
+          return { ...prev, screen: goToMouse, remainingCats: [0, 1, 2], currentCatIndex: 0, catSubAction: 'idle', selectedCat: null, round: prev.round + 1, searchResult: null };
         }
-        return { ...prev, screen: 'cat_acting', currentCatIndex: next, catSubAction: 'idle', selectedCat: null, searchResult: null };
+        return { ...prev, screen: 'cat_acting', catSubAction: 'idle', selectedCat: null, searchResult: null };
       });
     }, delay);
     return () => clearTimeout(t);
@@ -229,7 +227,7 @@ export default function App() {
       if (game.catPositions.length < NUM_CATS) {
         setGame({ ...game, screen: 'cat_setup', currentCatIndex: 0 });
       } else {
-        setGame({ ...game, screen: 'cat_acting', selectedCat: null, catSubAction: 'idle' });
+        setGame({ ...game, screen: 'cat_acting', remainingCats: [0, 1, 2], selectedCat: null, catSubAction: 'idle' });
       }
     }
     setPendingMouseMove(null);
@@ -278,20 +276,29 @@ export default function App() {
 
     if (game.screen !== 'cat_acting' || isCpuCats(game.mode)) return;
 
-    if (inList(pos, validCatMoves)) {
+    const catIdx = game.catPositions.findIndex((p) => posEq(p, pos));
+
+    // If clicking an unacted cat → select it
+    if (catIdx !== -1 && game.remainingCats.includes(catIdx) && game.selectedCat !== catIdx) {
+      setGame({ ...game, selectedCat: catIdx, currentCatIndex: catIdx, catSubAction: 'idle' });
+      return;
+    }
+
+    // If a cat is selected and clicking a valid move destination → move
+    if (game.selectedCat !== null && inList(pos, validCatMoves)) {
       const newCats = [...game.catPositions];
-      newCats[game.currentCatIndex] = pos;
-      const next = game.currentCatIndex + 1;
-      if (next >= NUM_CATS) {
+      newCats[game.selectedCat] = pos;
+      const newRemaining = game.remainingCats.filter((i) => i !== game.selectedCat);
+      if (newRemaining.length === 0) {
         if (game.round >= MAX_ROUNDS) {
           const finalTrail = game.mousePosition ? [...game.trailMarkers, { position: game.mousePosition, turn: game.trailMarkers.length + 1, discovered: false }] : game.trailMarkers;
           setGame({ ...game, catPositions: newCats, trailMarkers: finalTrail, screen: 'game_over', winner: 'mouse', winReason: 'escaped' });
         } else {
           const nextScreen = isCpuMouse(game.mode) ? 'mouse_moving' : 'handoff_to_mouse';
-          setGame({ ...game, catPositions: newCats, screen: nextScreen, currentCatIndex: 0, catSubAction: 'idle', selectedCat: null, round: game.round + 1 });
+          setGame({ ...game, catPositions: newCats, screen: nextScreen, remainingCats: [0, 1, 2], currentCatIndex: 0, catSubAction: 'idle', selectedCat: null, round: game.round + 1 });
         }
       } else {
-        setGame({ ...game, catPositions: newCats, currentCatIndex: next, catSubAction: 'idle', selectedCat: null });
+        setGame({ ...game, catPositions: newCats, remainingCats: newRemaining, currentCatIndex: newRemaining[0], catSubAction: 'idle', selectedCat: null });
       }
     }
   }
@@ -335,6 +342,7 @@ export default function App() {
             validMouseMoves={[]}
             selectedMouseMove={null}
             selectedCat={null}
+            remainingCats={[]}
             validCatMoves={[]}
             searchableBuildings={[]}
             searchedBuilding={null}
@@ -371,7 +379,8 @@ export default function App() {
           showAllTrails={showAllTrails}
           validMouseMoves={game.screen === 'mouse_setup' ? setupValidMoves : validMouseMoves}
           selectedMouseMove={pendingMouseMove}
-          selectedCat={isCatPhase ? game.currentCatIndex : null}
+          selectedCat={isCatPhase ? game.selectedCat : null}
+          remainingCats={isCatPhase && !isCpuCats(game.mode) ? game.remainingCats : []}
           validCatMoves={validCatMoves}
           searchableBuildings={searchableBuildings}
           searchedBuilding={game.searchResult?.searchedBuilding ?? null}
@@ -409,6 +418,8 @@ export default function App() {
       {(isCatPhase || isCatSetup) && (
         <CatActionPanel
           currentCatIndex={game.currentCatIndex}
+          remainingCats={isCatSetup ? [] : game.remainingCats}
+          selectedCat={game.selectedCat}
           catPositions={game.catPositions}
           isCpu={isCpuCats(game.mode)}
           isSetup={isCatSetup}
@@ -430,14 +441,19 @@ function executeCatSearch(game: GameState, building: Position): GameState {
     ? [...game.knownEmpty, building]
     : game.knownEmpty;
 
+  const actingCat = game.selectedCat ?? game.currentCatIndex;
+  const newRemaining = game.remainingCats.filter((i) => i !== actingCat);
+
   return {
     ...game,
     trailMarkers: newTrails,
     knownEmpty: newKnownEmpty,
+    remainingCats: newRemaining,
+    currentCatIndex: newRemaining[0] ?? actingCat,
     screen: 'search_result',
     searchResult: {
       found,
-      catIndex: game.currentCatIndex,
+      catIndex: actingCat,
       markerTurn: foundMarker?.turn,
       searchedBuilding: building,
     },

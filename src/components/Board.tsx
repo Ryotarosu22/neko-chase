@@ -10,6 +10,7 @@ interface Props {
   validMouseMoves: Position[];
   selectedMouseMove: Position | null;
   selectedCat: number | null;
+  remainingCats: number[];
   validCatMoves: Position[];
   searchableBuildings: Position[];
   searchedBuilding: Position | null;
@@ -24,7 +25,7 @@ function cheeseStyle(turn: number): { bg: string; showNum: boolean } {
 
 export default function Board({
   mousePosition, catPositions, trailMarkers, showMouse, showAllTrails,
-  validMouseMoves, selectedMouseMove, selectedCat, validCatMoves,
+  validMouseMoves, selectedMouseMove, selectedCat, remainingCats, validCatMoves,
   searchableBuildings, searchedBuilding,
   onBuildingClick, onCatSquareClick,
 }: Props) {
@@ -112,6 +113,7 @@ export default function Board({
         const catIdx = catPositions.findIndex((p) => posEq(p, cPos));
         const hasCat = catIdx !== -1;
         const isSelectedCat = hasCat && catIdx === selectedCat;
+        const isRemaining = hasCat && remainingCats.includes(catIdx) && catIdx !== selectedCat;
         const isValidCatMove = inList(cPos, validCatMoves);
 
         const catColors = ['#2563eb', '#7c3aed', '#4338ca'];
@@ -122,18 +124,19 @@ export default function Board({
             onClick={() => onCatSquareClick(cPos)}
             className={`relative flex items-center justify-center rounded-md transition-all active:scale-95
               ${isSelectedCat ? 'ring-2 ring-amber-400' : ''}
+              ${isRemaining ? 'ring-2 ring-green-400' : ''}
               ${isValidCatMove ? 'ring-2 ring-sky-400' : ''}
             `}
             style={{
-              background: isSelectedCat ? '#fef3c7' : isValidCatMove ? '#e0f2fe' : '#f3f4f6',
+              background: isSelectedCat ? '#fef3c7' : isRemaining ? '#f0fdf4' : isValidCatMove ? '#e0f2fe' : '#f3f4f6',
               fontSize: 'clamp(14px, 3.5vw, 22px)',
             }}
           >
             {hasCat && (
               <div className="relative">
-                <span style={{ color: catColors[catIdx % 3] }}>🐱</span>
-                <span className="absolute -bottom-0.5 -right-1.5 bg-gray-700 text-white rounded-full font-bold leading-none flex items-center justify-center"
-                  style={{ fontSize: 'clamp(5px,1.3vw,8px)', width: '1.3em', height: '1.3em' }}>
+                <span style={{ color: catColors[catIdx % 3], opacity: isRemaining ? 1 : catIdx !== selectedCat && remainingCats.length > 0 && !remainingCats.includes(catIdx) ? 0.4 : 1 }}>🐱</span>
+                <span className="absolute -bottom-0.5 -right-1.5 text-white rounded-full font-bold leading-none flex items-center justify-center"
+                  style={{ fontSize: 'clamp(5px,1.3vw,8px)', width: '1.3em', height: '1.3em', background: catColors[catIdx % 3] }}>
                   {catIdx + 1}
                 </span>
               </div>

@@ -109,7 +109,10 @@ export default function App() {
         newCats[prev.currentCatIndex] = decision.targetPosition;
         const next = prev.currentCatIndex + 1;
         if (next >= NUM_CATS) {
-          if (prev.round >= MAX_ROUNDS) return { ...prev, catPositions: newCats, screen: 'game_over', winner: 'mouse', winReason: 'escaped' };
+          if (prev.round >= MAX_ROUNDS) {
+            const finalTrail = prev.mousePosition ? [...prev.trailMarkers, { position: prev.mousePosition, turn: prev.trailMarkers.length + 1, discovered: false }] : prev.trailMarkers;
+            return { ...prev, catPositions: newCats, trailMarkers: finalTrail, screen: 'game_over', winner: 'mouse', winReason: 'escaped' };
+          }
           return { ...prev, catPositions: newCats, screen: 'mouse_moving', currentCatIndex: 0, catSubAction: 'idle', selectedCat: null, round: prev.round + 1 };
         }
         return { ...prev, catPositions: newCats, currentCatIndex: next };
@@ -182,7 +185,10 @@ export default function App() {
         const catIdx = prev.searchResult?.catIndex ?? 0;
         const next = catIdx + 1;
         if (next >= NUM_CATS) {
-          if (prev.round >= MAX_ROUNDS) return { ...prev, screen: 'game_over', winner: 'mouse', winReason: 'escaped', searchResult: null };
+          if (prev.round >= MAX_ROUNDS) {
+            const finalTrail = prev.mousePosition ? [...prev.trailMarkers, { position: prev.mousePosition, turn: prev.trailMarkers.length + 1, discovered: false }] : prev.trailMarkers;
+            return { ...prev, trailMarkers: finalTrail, screen: 'game_over', winner: 'mouse', winReason: 'escaped', searchResult: null };
+          }
           const goToMouse = isCpuMouse(prev.mode) ? 'mouse_moving' : isCpuCats(prev.mode) ? 'mouse_moving' : 'handoff_to_mouse';
           return { ...prev, screen: goToMouse, currentCatIndex: 0, catSubAction: 'idle', selectedCat: null, round: prev.round + 1, searchResult: null };
         }
@@ -278,7 +284,8 @@ export default function App() {
       const next = game.currentCatIndex + 1;
       if (next >= NUM_CATS) {
         if (game.round >= MAX_ROUNDS) {
-          setGame({ ...game, catPositions: newCats, screen: 'game_over', winner: 'mouse', winReason: 'escaped' });
+          const finalTrail = game.mousePosition ? [...game.trailMarkers, { position: game.mousePosition, turn: game.trailMarkers.length + 1, discovered: false }] : game.trailMarkers;
+          setGame({ ...game, catPositions: newCats, trailMarkers: finalTrail, screen: 'game_over', winner: 'mouse', winReason: 'escaped' });
         } else {
           const nextScreen = isCpuMouse(game.mode) ? 'mouse_moving' : 'handoff_to_mouse';
           setGame({ ...game, catPositions: newCats, screen: nextScreen, currentCatIndex: 0, catSubAction: 'idle', selectedCat: null, round: game.round + 1 });

@@ -29,12 +29,10 @@ function bestMoveToward(catIndex: number, catPositions: Position[], target: Posi
 // ─── Reachability BFS ────────────────────────────────────────────────────────
 
 /**
- * All buildings the mouse could currently occupy, given:
+ * All buildings the mouse could currently occupy given:
  * - They were at `fromPos` when trail #trailNum was placed
  * - Current cat turn is `catTurn`
  * - They cannot revisit any `blocked` position (all trail marker positions)
- *
- * After placing trail #N, the mouse has made (catTurn - N) additional moves.
  */
 function reachablePositions(
   fromPos: Position,
@@ -49,7 +47,6 @@ function reachablePositions(
 
   while (queue.length > 0) {
     const [pos, rem] = queue.shift()!;
-    // The mouse is NOT at the trail position itself (they moved away)
     if (!posEq(pos, fromPos) && !inList(pos, blocked)) result.push(pos);
     if (rem <= 0) continue;
     for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
@@ -65,39 +62,47 @@ function reachablePositions(
   return result;
 }
 
-/** Direction vector (dr, dc) from two discovered trail markers (older → newer) */
-function directionVector(older: TrailMarker, newer: TrailMarker): [number, number] {
-  const dr = Math.sign(newer.position.row - older.position.row);
-  const dc = Math.sign(newer.position.col - older.position.col);
-  return [dr, dc];
-}
-
 /**
- * Score a candidate position based on how well it aligns with the direction
- * of mouse travel. Higher = more likely mouse location.
+ * Count how many buildings the mouse can still reach from `pos`,
+ * given `blocked` positions (trail markers). Fewer = more cornered.
  */
-function directionScore(pos: Position, from: Position, dr: number, dc: number): number {
-  const relRow = pos.row - from.row;
-  const relCol = pos.col - from.col;
-  return relRow * dr + relCol * dc; // dot product
+function mouseFreedom(pos: Position, blocked: Position[]): number {
+  const visited = new Set<string>([posKey(pos)]);
+  const queue: Position[] = [pos];
+  let count = 0;
+  while (queue.length > 0) {
+    const cur = queue.shift()!;
+    for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+      const next = { row: cur.row + dr, col: cur.col + dc };
+      if (next.row < 0 || next.row >= BUILDING_SIZE || next.col < 0 || next.col >= BUILDING_SIZE) continue;
+      if (inList(next, blocked)) continue;
+      const k = posKey(next);
+      if (visited.has(k)) continue;
+      visited.add(k);
+      count++;
+      queue.push(next);
+    }
+  }
+  return count;
 }
 
-// ─── Phase A: Patrol zones ────────────────────────────────────────────────────
+// ─── Phase A: Column-based patrol (comb pattern) ─────────────────────────────
 
 /**
- * Each cat covers a horizontal strip of the building grid.
- * Cat 0 → rows 0-1, Cat 1 → rows 2-3, Cat 2 → row 4 + overflow.
+ * Each cat covers a vertical column strip.
+ * Cat 0 → cols 0-1, Cat 1 → cols 2-3, Cat 2 → col 4
+ * Within their zone cats sweep across rows systematically.
  */
 function zoneBuildings(catIndex: number): Position[] {
   const strips = [
-    [0, 1],  // cat 0: top 2 rows
-    [2, 3],  // cat 1: middle 2 rows
-    [4, 4],  // cat 2: bottom row
+    [0, 1],  // cat 0: left 2 cols
+    [2, 3],  // cat 1: middle 2 cols
+    [4, 4],  // cat 2: right col
   ];
-  const [rMin, rMax] = strips[catIndex % 3];
+  const [cMin, cMax] = strips[catIndex % 3];
   const result: Position[] = [];
-  for (let r = rMin; r <= rMax; r++)
-    for (let c = 0; c < BUILDING_SIZE; c++)
+  for (let r = 0; r < BUILDING_SIZE; r++)
+    for (let c = cMin; c <= cMax; c++)
       result.push({ row: r, col: c });
   return result;
 }
@@ -106,8 +111,8 @@ function zoneBuildings(catIndex: number): Position[] {
 function nextPatrolTarget(
   catPos: Position,
   catIndex: number,
-  knownPositions: Position[],   // trail positions + knownEmpty
-  otherCatTargets: Position[],  // targets already claimed by other cats
+  knownPositions: Position[],
+  otherCatTargets: Position[],
 ): Position | null {
   const zone = zoneBuildings(catIndex);
   const all25: Position[] = [];
@@ -115,7 +120,6 @@ function nextPatrolTarget(
     for (let c = 0; c < BUILDING_SIZE; c++)
       all25.push({ row: r, col: c });
 
-  // Prefer zone buildings, then all buildings
   const candidates = [
     ...zone.filter((b) => !inList(b, knownPositions) && !inList(b, otherCatTargets)),
     ...all25.filter((b) => !inList(b, knownPositions) && !inList(b, otherCatTargets) && !inList(b, zone)),
@@ -123,10 +127,99 @@ function nextPatrolTarget(
   ];
   if (candidates.length === 0) return null;
 
-  // Nearest candidate to this cat-square
   return candidates.reduce((best, b) =>
     catSqDistTo(catPos, b) < catSqDistTo(best, b) ? b : best,
   );
+}
+
+// ─── Phase B: Pursuit roles ───────────────────────────────────────────────────
+
+type PursuitRole = 'chaser' | 'interceptor' | 'blocker';
+
+interface RoleAssignment {
+  catIndex: number;
+  role: PursuitRole;
+  target: Position;
+}
+
+/**
+ * Assign roles to all cats when trails are known.
+ * - 1 trail: use BFS candidates; assign closest→chaser, others minimize mouse freedom
+ * - 2+ trails: estimate direction; chaser pursues, interceptor cuts ahead, blocker flanks
+ */
+function assignPursuitRoles(
+  catPositions: Position[],
+  discovered: TrailMarker[],
+  trailPositions: Position[],
+  round: number,
+): RoleAssignment[] {
+  const latest = discovered[0];
+  const candidates = reachablePositions(latest.position, latest.turn, round, trailPositions);
+
+  if (candidates.length === 0) {
+    // All reachable positions exhausted — converge on last known
+    return catPositions.map((_, i) => ({ catIndex: i, role: 'chaser', target: latest.position }));
+  }
+
+  // Score candidates: lower mouse freedom = higher priority target
+  const scored = candidates.map((pos) => ({
+    pos,
+    freedom: mouseFreedom(pos, trailPositions),
+  })).sort((a, b) => a.freedom - b.freedom);
+
+  if (discovered.length < 2) {
+    // Only 1 trail — no direction info yet
+    // Closest cat chases the most-cornered candidate; others cover high-freedom escape routes
+    const catsByDist = catPositions
+      .map((pos, i) => ({ i, dist: catSqDistTo(pos, latest.position) }))
+      .sort((a, b) => a.dist - b.dist);
+
+    const assignments: RoleAssignment[] = [];
+    const claimedTargets: Position[] = [];
+
+    for (const { i } of catsByDist) {
+      // Pick highest-priority (lowest freedom) unclaimed target
+      const target = scored.find((s) => !inList(s.pos, claimedTargets))?.pos ?? latest.position;
+      assignments.push({ catIndex: i, role: i === catsByDist[0].i ? 'chaser' : 'blocker', target });
+      claimedTargets.push(target);
+    }
+    return assignments;
+  }
+
+  // 2+ trails: compute direction vector
+  const older = discovered[1]; // second most recent
+  const dr = Math.sign(latest.position.row - older.position.row);
+  const dc = Math.sign(latest.position.col - older.position.col);
+
+  // Project intercept point: latest position + direction * (remaining turns estimate)
+  const stepsAhead = Math.max(1, Math.min(3, MAX_ROUNDS - round));
+  const interceptRow = Math.max(0, Math.min(BUILDING_SIZE - 1, latest.position.row + dr * stepsAhead));
+  const interceptCol = Math.max(0, Math.min(BUILDING_SIZE - 1, latest.position.col + dc * stepsAhead));
+  const interceptTarget: Position = { row: interceptRow, col: interceptCol };
+
+  // Flank: opposite side of the direction
+  const flankRow = Math.max(0, Math.min(BUILDING_SIZE - 1, latest.position.row - dr * 2));
+  const flankCol = Math.max(0, Math.min(BUILDING_SIZE - 1, latest.position.col - dc * 2));
+  const flankTarget: Position = { row: flankRow, col: flankCol };
+
+  // Best chase target: low-freedom candidate in direction of travel
+  const chaseTarget = scored
+    .filter((s) => (s.pos.row - latest.position.row) * dr >= 0 && (s.pos.col - latest.position.col) * dc >= 0)
+    .shift()?.pos ?? scored[0].pos;
+
+  // Assign roles: cat closest to intercept→interceptor, closest to chase→chaser, rest→blocker
+  const roles: { target: Position; role: PursuitRole }[] = [
+    { target: chaseTarget, role: 'chaser' },
+    { target: interceptTarget, role: 'interceptor' },
+    { target: flankTarget, role: 'blocker' },
+  ];
+
+  return catPositions.map((catPos, i) => {
+    const best = roles.reduce((bestRole, r) =>
+      catSqDistTo(catPos, r.target) < catSqDistTo(catPos, bestRole.target) ? r : bestRole
+    );
+    return { catIndex: i, role: best.role, target: best.target };
+  });
 }
 
 // ─── Decision ────────────────────────────────────────────────────────────────
@@ -137,7 +230,6 @@ export interface CpuCatDecision {
   searchBuilding?: Position;
 }
 
-/** Sorted discovered markers, newest first */
 function discoveredSorted(trailMarkers: TrailMarker[]): TrailMarker[] {
   return trailMarkers.filter((m) => m.discovered).sort((a, b) => b.turn - a.turn);
 }
@@ -146,6 +238,7 @@ export function getCpuCatDecision(
   state: GameState,
   catIndex: number,
   otherCatTargets: Position[] = [],
+  roleAssignments: RoleAssignment[] = [],
 ): CpuCatDecision {
   const { catPositions, trailMarkers, knownEmpty, round } = state;
   const catPos = catPositions[catIndex];
@@ -163,66 +256,35 @@ export function getCpuCatDecision(
 
   // ── Phase B: trail found ─────────────────────────────────────────────────
   if (discovered.length > 0) {
-    const latest = discovered[0];
+    const myRole = roleAssignments.find((r) => r.catIndex === catIndex);
+    const myTarget = myRole?.target ?? discovered[0].position;
 
-    // How far the mouse could have moved since we last found a trail
-    const candidates = reachablePositions(latest.position, latest.turn, round, trailPositions);
+    // If we can directly search the target building, do it
+    const canSearch = searchable.filter((b) => !inList(b, allKnown));
+    const directHit = canSearch.find((b) => posEq(b, myTarget));
+    if (directHit) return { action: 'search', searchBuilding: directHit };
 
-    // Weight candidates by direction if we have 2+ discovered markers
-    let scoredCandidates: { pos: Position; score: number }[];
-    if (discovered.length >= 2) {
-      const [dr, dc] = directionVector(discovered[1], discovered[0]);
-      scoredCandidates = candidates.map((pos) => ({
-        pos,
-        score: directionScore(pos, latest.position, dr, dc) * 2
-               - catSqDistTo(catPos, pos), // prefer closer + in direction
-      }));
-    } else {
-      scoredCandidates = candidates.map((pos) => ({
-        pos,
-        score: -catSqDistTo(catPos, pos), // prefer closer
-      }));
+    // Search any adjacent candidate that scores well (in reachable set)
+    const candidates = reachablePositions(discovered[0].position, discovered[0].turn, round, trailPositions);
+    const adjacentCandidate = canSearch.find((b) => inList(b, candidates));
+    if (adjacentCandidate && catSqDistTo(catPos, discovered[0].position) <= 2) {
+      // Pick the adjacent candidate with lowest mouse freedom (most cornering)
+      const best = canSearch
+        .filter((b) => inList(b, candidates))
+        .reduce((a, b) => mouseFreedom(a, trailPositions) < mouseFreedom(b, trailPositions) ? a : b);
+      return { action: 'search', searchBuilding: best };
     }
 
-    // Sort descending by score; skip positions already claimed
-    scoredCandidates.sort((a, b) => b.score - a.score);
-    const unclaimed = scoredCandidates.filter((sc) => !inList(sc.pos, otherCatTargets));
-    const myTarget = (unclaimed[0] ?? scoredCandidates[0])?.pos;
+    // Move toward role target
+    const move = bestMoveToward(catIndex, catPositions, myTarget);
+    if (move) return { action: 'move', targetPosition: move };
 
-    if (myTarget) {
-      // If we can search the target building directly, do it
-      const canSearch = searchable.filter((b) => !inList(b, allKnown));
-      const directHit = canSearch.find((b) =>
-        scoredCandidates.some((sc) => posEq(sc.pos, b)),
-      );
-      if (directHit) return { action: 'search', searchBuilding: directHit };
-
-      // Otherwise, if we have unknown adjacent buildings and we're close, search one
-      if (canSearch.length > 0 && catSqDistTo(catPos, latest.position) <= 2) {
-        const bestLocal = canSearch.reduce((best, b) => {
-          const bScore = scoredCandidates.find((sc) => posEq(sc.pos, b))?.score ?? -99;
-          const bestScore = scoredCandidates.find((sc) => posEq(sc.pos, best))?.score ?? -99;
-          return bScore > bestScore ? b : best;
-        });
-        return { action: 'search', searchBuilding: bestLocal };
-      }
-
-      // Move toward target
-      const move = bestMoveToward(catIndex, catPositions, myTarget);
-      if (move) return { action: 'move', targetPosition: move };
-    }
-
-    // Fallback: search any unknown adjacent building
-    const unknown = searchable.filter((b) => !inList(b, allKnown));
-    if (unknown.length > 0) return { action: 'search', searchBuilding: unknown[0] };
+    // Fallback: search anything unknown
+    if (canSearch.length > 0) return { action: 'search', searchBuilding: canSearch[0] };
     return { action: 'search', searchBuilding: searchable[0] };
   }
 
-  // ── Phase A: patrol ──────────────────────────────────────────────────────
-  // Strategy: move toward zone target first, only search when target is adjacent.
-  // Occasionally make an extra move even when adjacent, to avoid the "search only
-  // near starting position" trap that lets a distant mouse stay safe indefinitely.
-
+  // ── Phase A: column-zone patrol (comb sweep) ─────────────────────────────
   const target = nextPatrolTarget(catPos, catIndex, allKnown, otherCatTargets);
   if (!target) {
     const unknown = searchable.filter((b) => !inList(b, allKnown));
@@ -231,16 +293,12 @@ export function getCpuCatDecision(
 
   const targetIsAdjacent = getBuildingsAtCatSquare(catPos.row, catPos.col).some((b) => posEq(b, target));
 
-  // If target is adjacent AND we decide to search (not always — occasionally move on)
   if (targetIsAdjacent) {
-    // Occasionally extend range: every 3rd patrol step prefer moving to next target
-    // so cats don't linger searching all 4 buildings before advancing.
-    // Use (round + catIndex * 3) as a simple pseudo-alternation.
-    const preferMove = (round + catIndex * 3) % 3 === 0;
+    // Occasionally skip searching to advance further (avoid camping one spot)
+    const preferMove = (round + catIndex * 3) % 4 === 0;
     if (!preferMove) {
       const unknownAdjacent = searchable.filter((b) => !inList(b, allKnown));
       if (unknownAdjacent.length > 0) {
-        // Search the one closest to patrol target
         const best = unknownAdjacent.reduce((a, b) =>
           manhattan(a, target) < manhattan(b, target) ? a : b,
         );
@@ -249,13 +307,11 @@ export function getCpuCatDecision(
     }
   }
 
-  // Move toward patrol target
   const move = bestMoveToward(catIndex, catPositions, target);
   if (move && catSqDistTo(move, target) < catSqDistTo(catPos, target)) {
     return { action: 'move', targetPosition: move };
   }
 
-  // Can't get closer (blocked or already adjacent) — search
   const unknownAdjacent = searchable.filter((b) => !inList(b, allKnown));
   if (unknownAdjacent.length > 0) return { action: 'search', searchBuilding: unknownAdjacent[0] };
   return { action: 'search', searchBuilding: searchable[0] };
@@ -263,18 +319,22 @@ export function getCpuCatDecision(
 
 // ─── Coordinate all three cats ────────────────────────────────────────────────
 
-/**
- * Called by App.tsx instead of getCpuCatDecision directly.
- * Computes decisions for all three cats at once so they can coordinate targets.
- */
 export function getCpuCatDecisions(state: GameState): CpuCatDecision[] {
+  const discovered = discoveredSorted(state.trailMarkers);
+  const trailPositions = state.trailMarkers.map((m) => m.position);
+
+  // Pre-compute role assignments for Phase B (shared across all cats)
+  const roleAssignments: RoleAssignment[] =
+    discovered.length > 0
+      ? assignPursuitRoles(state.catPositions, discovered, trailPositions, state.round)
+      : [];
+
   const decisions: CpuCatDecision[] = [];
   const claimedTargets: Position[] = [];
 
   for (let i = 0; i < state.catPositions.length; i++) {
-    const decision = getCpuCatDecision(state, i, claimedTargets);
+    const decision = getCpuCatDecision(state, i, claimedTargets, roleAssignments);
     decisions.push(decision);
-    // Register the target so the next cat avoids it
     if (decision.action === 'move' && decision.targetPosition) claimedTargets.push(decision.targetPosition);
     if (decision.action === 'search' && decision.searchBuilding) claimedTargets.push(decision.searchBuilding);
   }
@@ -286,7 +346,6 @@ export function getCpuCatDecisions(state: GameState): CpuCatDecision[] {
 export function getCpuMouseDecision(mousePos: Position, trailMarkers: TrailMarker[]): Position | null {
   const valid = getValidMouseMoves(mousePos, trailMarkers);
   if (valid.length === 0) return null;
-  // Greedy: maximise future valid moves from destination
   const futureTrails = [...trailMarkers, { position: mousePos, turn: 0, discovered: false }];
   return valid.reduce((best, pos) =>
     getValidMouseMoves(pos, futureTrails).length > getValidMouseMoves(best, futureTrails).length

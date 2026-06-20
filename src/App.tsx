@@ -5,7 +5,7 @@ import {
   getValidMouseMoves, getValidCatMoves, getSearchableBuildings,
   isMouseTrapped, posEq, inList,
 } from './gameLogic';
-import { getCpuCatDecisions, getCpuMouseDecision } from './cpuLogic';
+import { getCpuCatDecisions, getCpuMouseDecision, getCpuMouseStartPosition } from './cpuLogic';
 
 import ModeSelect from './components/ModeSelect';
 import PrivacyPolicy from './components/PrivacyPolicy';
@@ -136,12 +136,12 @@ export default function App() {
       if (!prev || !isCpuMouse(prev.mode)) return prev;
 
       if (prev.screen === 'mouse_setup') {
-        const center = { row: 2, col: 2 };
-        return { ...prev, mousePosition: center, screen: 'cat_acting', selectedCat: null, catSubAction: 'idle' };
+        const startPos = getCpuMouseStartPosition(prev.catPositions);
+        return { ...prev, mousePosition: startPos, screen: 'cat_acting', selectedCat: null, catSubAction: 'idle' };
       }
 
       if (prev.screen === 'mouse_moving' && prev.mousePosition) {
-        const dest = getCpuMouseDecision(prev.mousePosition, prev.trailMarkers);
+        const dest = getCpuMouseDecision(prev.mousePosition, prev.trailMarkers, prev.catPositions);
         if (!dest) {
           return { ...prev, screen: 'game_over', winner: 'cat', winReason: 'trapped' };
         }

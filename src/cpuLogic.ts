@@ -358,13 +358,90 @@ export function getCpuCatDecisions(state: GameState): CpuCatDecision[] {
 
 // ─── CPU Mouse ───────────────────────────────────────────────────────────────
 
-export function getCpuMouseDecision(mousePos: Position, trailMarkers: TrailMarker[]): Position | null {
+/**
+ * Minimum manhattan distance from a building to any cat-square's 4 adjacent buildings.
+ * Higher = farther from all cats = safer.
+ */
+function minDistToCats(pos: Position, catPositions: Position[]): number {
+  if (catPositions.length === 0) return 99;
+  return Math.min(
+    ...catPositions.map((catSq) =>
+      Math.min(...getBuildingsAtCatSquare(catSq.row, catSq.col).map((b) => manhattan(pos, b)))
+    )
+  );
+}
+
+/**
+ * Choose the best starting position for the CPU mouse given cat placements.
+ * Strategy: maximise distance from all cats + prefer positions with high future freedom.
+ */
+export function getCpuMouseStartPosition(catPositions: Position[]): Position {
+  const all25: Position[] = [];
+  for (let r = 0; r < BUILDING_SIZE; r++)
+    for (let c = 0; c < BUILDING_SIZE; c++)
+      all25.push({ row: r, col: c });
+
+  // Score each building: distance from cats (weighted heavily) + future freedom
+  return all25.reduce((best, pos) => {
+    const distScore = minDistToCats(pos, catPositions);
+    const freedomScore = mouseFreedom(pos, []);
+    const score = distScore * 3 + freedomScore;
+
+    const bestDist = minDistToCats(best, catPositions);
+    const bestFreedom = mouseFreedom(best, []);
+    const bestScore = bestDist * 3 + bestFreedom;
+
+    return score > bestScore ? pos : best;
+  });
+}
+
+/**
+ * Score a candidate move for the CPU mouse.
+ * Balances: future freedom, distance from cats, and not moving toward cats.
+ */
+function scoreCpuMouseMove(
+  pos: Position,
+  currentPos: Position,
+  catPositions: Position[],
+  trailMarkers: TrailMarker[],
+): number {
+  // Future freedom after moving here (trails will include current pos)
+  const futureTrails = [...trailMarkers, { position: currentPos, turn: 0, discovered: false }];
+  const freedom = getValidMouseMoves(pos, futureTrails).length;
+
+  // Distance from all cats (higher = safer)
+  const catDist = minDistToCats(pos, catPositions);
+
+  // Penalise moving closer to any cat
+  const currentDist = minDistToCats(currentPos, catPositions);
+  const movingTowardCats = catDist < currentDist ? -2 : 0;
+
+  // Bonus for moving away from the nearest cat
+  const fleeBonus = catDist - currentDist;
+
+  return freedom * 2 + catDist * 3 + fleeBonus + movingTowardCats;
+}
+
+export function getCpuMouseDecision(
+  mousePos: Position,
+  trailMarkers: TrailMarker[],
+  catPositions: Position[] = [],
+): Position | null {
   const valid = getValidMouseMoves(mousePos, trailMarkers);
   if (valid.length === 0) return null;
-  const futureTrails = [...trailMarkers, { position: mousePos, turn: 0, discovered: false }];
+
+  if (catPositions.length === 0) {
+    // Fallback: maximise future freedom only
+    const futureTrails = [...trailMarkers, { position: mousePos, turn: 0, discovered: false }];
+    return valid.reduce((best, pos) =>
+      getValidMouseMoves(pos, futureTrails).length > getValidMouseMoves(best, futureTrails).length
+        ? pos : best,
+    );
+  }
+
   return valid.reduce((best, pos) =>
-    getValidMouseMoves(pos, futureTrails).length > getValidMouseMoves(best, futureTrails).length
-      ? pos
-      : best,
+    scoreCpuMouseMove(pos, mousePos, catPositions, trailMarkers) >
+    scoreCpuMouseMove(best, mousePos, catPositions, trailMarkers)
+      ? pos : best,
   );
 }

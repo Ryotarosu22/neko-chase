@@ -29,16 +29,16 @@ export default function GameOverScreen({ winner, winReason, onPlayAgain }: Props
   const isMouseWin = winner === 'mouse';
 
   return (
-    <div className={`w-full max-w-xs rounded-3xl px-6 py-6 text-center shadow-2xl ${isMouseWin ? 'bg-green-50' : 'bg-blue-50'}`}>
-      <div className="text-7xl mb-2 animate-bounce-in">{msg.emoji}</div>
-      <h2 className="text-2xl font-bold text-gray-800">{msg.title}</h2>
-      <p className="text-gray-600 mt-1 text-sm">{msg.sub}</p>
-      {winReason !== 'escaped' && (
-        <p className="text-xs text-gray-400 mt-2">↓ ネズミの移動経路</p>
-      )}
+    <div className={`w-full px-4 py-3 flex items-center gap-3 border-t-2 ${isMouseWin ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'}`}>
+      <div className="text-4xl animate-bounce-in shrink-0">{msg.emoji}</div>
+      <div className="flex-1 min-w-0">
+        <p className="font-bold text-gray-800 text-base leading-tight">{msg.title}</p>
+        <p className="text-gray-500 text-xs mt-0.5">{msg.sub}</p>
+        <p className="text-xs text-gray-400 mt-0.5">↑ ネズミの移動経路</p>
+      </div>
       <button
         onClick={onPlayAgain}
-        className={`mt-4 w-full py-3 rounded-2xl text-white font-bold text-lg shadow active:scale-95 transition-transform ${isMouseWin ? 'bg-green-500' : 'bg-blue-500'}`}
+        className={`shrink-0 px-4 py-2 rounded-2xl text-white font-bold text-sm shadow active:scale-95 transition-transform ${isMouseWin ? 'bg-green-500' : 'bg-blue-500'}`}
       >
         もう一度！
       </button>

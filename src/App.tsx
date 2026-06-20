@@ -313,12 +313,12 @@ export default function App() {
     return <ModeSelect onStart={handleStart} onPrivacy={() => setShowPrivacy(true)} />;
   }
 
-  // Game over: show board with full route revealed + overlay panel
+  // Game over: board on top (full route visible), result panel below
   if (game.screen === 'game_over' && game.winner && game.winReason) {
     return (
       <div className="flex flex-col h-full max-w-lg mx-auto">
         <GameHeader round={game.round} screen={game.screen} currentCatIndex={game.currentCatIndex} onQuit={() => setGame(null)} />
-        <div className="flex-1 relative overflow-hidden flex items-center">
+        <div className="flex-1 overflow-hidden flex items-center">
           <Board
             mousePosition={game.mousePosition}
             catPositions={game.catPositions}
@@ -334,9 +334,9 @@ export default function App() {
             onBuildingClick={() => {}}
             onCatSquareClick={() => {}}
           />
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center p-6">
-            <GameOverScreen winner={game.winner} winReason={game.winReason} onPlayAgain={() => setGame(null)} />
-          </div>
+        </div>
+        <div className="shrink-0">
+          <GameOverScreen winner={game.winner} winReason={game.winReason} onPlayAgain={() => setGame(null)} />
         </div>
       </div>
     );

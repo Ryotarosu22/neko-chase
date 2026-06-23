@@ -1,4 +1,5 @@
 import { GameMode } from '../types';
+import AffiliateBanner from './AffiliateBanner';
 
 interface Props {
   onStart: (mode: GameMode) => void;
@@ -7,7 +8,7 @@ interface Props {
 
 export default function ModeSelect({ onStart, onPrivacy }: Props) {
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-6 px-6 bg-amber-50">
+    <div className="flex flex-col items-center justify-center min-h-full gap-6 px-6 py-8 bg-amber-50 overflow-y-auto">
       <div className="text-center animate-bounce-in">
         <div className="text-6xl mb-2">🐭</div>
         <h1 className="text-2xl font-bold text-amber-900 leading-tight">
@@ -43,6 +44,8 @@ export default function ModeSelect({ onStart, onPrivacy }: Props) {
         <p className="font-semibold mb-1">🎮 遊び方</p>
         <p>ネコは3匹のニャンコを動かして捜索。ネズミは11ターン逃げ切れば勝ち！</p>
       </div>
+
+      <AffiliateBanner variant="full" />
 
       <button
         onClick={onPrivacy}

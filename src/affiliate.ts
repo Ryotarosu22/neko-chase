@@ -9,9 +9,9 @@
 //   Amazonで商品ページを開く → URLの "dp/" の後ろ10桁が ASIN
 //   例: https://www.amazon.co.jp/dp/B07ABCDEFG → asin: 'B07ABCDEFG'
 
-export const ASSOCIATE_TAG = ''; // ← 承認後にアソシエイトIDを入れる（例: 'ryotaro-22'）
+export const ASSOCIATE_TAG = 'ryotarosu22-22'; // アソシエイトID（StoreID）
 
-export const AFFILIATE_ENABLED = false; // ← 承認 & 商品設定完了後に true
+export const AFFILIATE_ENABLED = true; // 有効化済み
 
 export interface AffiliateProduct {
   asin: string;          // Amazon商品ID（/dp/ の後ろ10桁）

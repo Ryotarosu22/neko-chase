@@ -4,9 +4,10 @@ import AffiliateBanner from './AffiliateBanner';
 interface Props {
   onStart: (mode: GameMode) => void;
   onPrivacy: () => void;
+  onTips: () => void;
 }
 
-export default function ModeSelect({ onStart, onPrivacy }: Props) {
+export default function ModeSelect({ onStart, onPrivacy, onTips }: Props) {
   return (
     <div className="flex flex-col items-center justify-center min-h-full gap-6 px-6 py-8 bg-amber-50 overflow-y-auto">
       <div className="text-center animate-bounce-in">
@@ -44,6 +45,13 @@ export default function ModeSelect({ onStart, onPrivacy }: Props) {
         <p className="font-semibold mb-1">🎮 遊び方</p>
         <p>ネコは3匹のニャンコを動かして捜索。ネズミは11ターン逃げ切れば勝ち！</p>
       </div>
+
+      <button
+        onClick={onTips}
+        className="w-full max-w-xs py-3 rounded-2xl bg-white border-2 border-amber-300 text-amber-700 font-bold shadow-sm active:scale-95 transition-transform"
+      >
+        💡 攻略のコツを読む
+      </button>
 
       <AffiliateBanner variant="full" />
 

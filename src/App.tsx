@@ -9,6 +9,7 @@ import { getCpuCatDecisions, getCpuMouseDecision, getCpuMouseStartPosition } fro
 
 import ModeSelect from './components/ModeSelect';
 import PrivacyPolicy from './components/PrivacyPolicy';
+import TipsScreen from './components/TipsScreen';
 import HandoffScreen from './components/HandoffScreen';
 import Board from './components/Board';
 import GameHeader from './components/GameHeader';
@@ -62,6 +63,7 @@ function unoccupiedCatSquares(placed: Position[]): Position[] {
 export default function App() {
   const [game, setGame] = useState<GameState | null>(null);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTips, setShowTips] = useState(false);
   const [pendingMouseMove, setPendingMouseMove] = useState<Position | null>(null);
   const cpuTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -324,7 +326,8 @@ export default function App() {
   // ── Render ──
   if (!game) {
     if (showPrivacy) return <PrivacyPolicy onBack={() => setShowPrivacy(false)} />;
-    return <ModeSelect onStart={handleStart} onPrivacy={() => setShowPrivacy(true)} />;
+    if (showTips) return <TipsScreen onBack={() => setShowTips(false)} />;
+    return <ModeSelect onStart={handleStart} onPrivacy={() => setShowPrivacy(true)} onTips={() => setShowTips(true)} />;
   }
 
   // Game over: board on top (full route visible), result panel below

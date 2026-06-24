@@ -1,4 +1,5 @@
 import { SearchResult } from '../types';
+import { useLang } from '../i18n';
 
 interface Props {
   result: SearchResult;
@@ -6,6 +7,7 @@ interface Props {
 }
 
 export default function SearchResultOverlay({ result, onDismiss }: Props) {
+  const { t } = useLang();
   const showMarker = !result.found && result.markerTurn != null;
   // Only turns 1 and 6 reveal the number — others just say "cheese found"
   const isSpecialTurn = result.markerTurn === 1 || result.markerTurn === 6;
@@ -30,18 +32,18 @@ export default function SearchResultOverlay({ result, onDismiss }: Props) {
         </div>
         <div className="text-xl font-bold">
           {result.found
-            ? 'つかまえた！'
+            ? t('caughtMsg')
             : showMarker
             ? isSpecialTurn
-              ? `チーズ発見！（${result.markerTurn}ターン目）`
-              : 'チーズ発見！'
-            : 'いなかった…'}
+              ? `${t('cheeseFoundTurnPre')}${result.markerTurn}${t('cheeseFoundTurn')}`
+              : t('cheeseFound')
+            : t('notHere')}
         </div>
-        <div className="text-sm mt-1 opacity-70">ネコ{result.catIndex + 1}が捜索</div>
+        <div className="text-sm mt-1 opacity-70">{t('catWord')}{result.catIndex + 1}{t('searchedBy')}</div>
 
         {onDismiss && (
           <div className="mt-4 text-sm font-bold opacity-80">
-            タップして続ける →
+            {t('tapContinue')}
           </div>
         )}
       </div>

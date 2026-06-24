@@ -1,5 +1,6 @@
 import { Position } from '../types';
 import { NUM_CATS, catPosLabel } from '../gameLogic';
+import { useLang } from '../i18n';
 
 interface Props {
   currentCatIndex: number;
@@ -18,10 +19,12 @@ const catColorClasses = [
 ];
 
 export default function CatActionPanel({ currentCatIndex, remainingCats, selectedCat, catPositions, isCpu, isSetup, placedCount = 0 }: Props) {
+  const { t } = useLang();
+  const catW = t('catWord');
   if (isCpu) {
     return (
       <div className="px-4 py-3 bg-white border-t border-gray-100 text-center text-gray-500 text-sm">
-        🤖 CPU が作戦を考えています…
+        {t('cpuThinking')}
       </div>
     );
   }
@@ -44,16 +47,16 @@ export default function CatActionPanel({ currentCatIndex, remainingCats, selecte
                 `}
               >
                 <span className="text-xl">{placed ? '✅' : '🐱'}</span>
-                <span>ネコ{i + 1}</span>
+                <span>{catW}{i + 1}</span>
                 <span className="text-gray-400 font-normal">
-                  {placed && catPositions[i] ? catPosLabel(catPositions[i]) : '未配置'}
+                  {placed && catPositions[i] ? catPosLabel(catPositions[i]) : t('notPlaced')}
                 </span>
               </div>
             );
           })}
         </div>
         <p className="text-xs text-center font-semibold text-blue-600">
-          ネコ{placedCount + 1}の配置場所を通路マスでタップ
+          {catW}{placedCount + 1}{t('placeCatHint')}
         </p>
       </div>
     );
@@ -79,7 +82,7 @@ export default function CatActionPanel({ currentCatIndex, remainingCats, selecte
               `}
             >
               <span className="text-xl">{isDone ? '✅' : '🐱'}</span>
-              <span>ネコ{i + 1}</span>
+              <span>{catW}{i + 1}</span>
               <span className="font-normal" style={{ color: isDone ? '#9ca3af' : undefined }}>
                 {catPositions[i] ? catPosLabel(catPositions[i]) : '—'}
               </span>
@@ -89,8 +92,8 @@ export default function CatActionPanel({ currentCatIndex, remainingCats, selecte
       </div>
       <p className="text-xs text-center font-semibold" style={{ color: isSelecting ? '#16a34a' : '#6b7280' }}>
         {isSelecting
-          ? '▲ どのネコを動かす？タップして選択'
-          : `ネコ${(selectedCat ?? currentCatIndex) + 1}：移動先の通路か捜索するビルをタップ`}
+          ? t('selectCat')
+          : `${catW}${(selectedCat ?? currentCatIndex) + 1}${t('catActionHint')}`}
       </p>
     </div>
   );

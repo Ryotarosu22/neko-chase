@@ -1,383 +1,265 @@
-// ─── 攻略Tips データ ──────────────────────────────────────────────────────
-// カテゴリごとに記事をまとめる。body は段落の配列（空行で区切られる）。
+import { Lang } from './i18n';
+
+// ─── 攻略Tips データ（日英対応） ──────────────────────────────────────────
+type LStr = { ja: string; en: string };
+type LBody = { ja: string[]; en: string[] };
 
 export interface TipArticle {
   id: string;
-  title: string;
-  summary: string;
-  body: string[]; // 段落ごとの配列
+  title: LStr;
+  summary: LStr;
+  body: LBody;
 }
 
 export interface TipCategory {
   id: string;
   icon: string;
-  name: string;
-  color: string; // tailwind bg color class for the chip
-  description: string;
+  name: LStr;
+  color: string;
+  description: LStr;
   articles: TipArticle[];
 }
 
+export function L(s: LStr, lang: Lang): string { return s[lang]; }
+export function LB(b: LBody, lang: Lang): string[] { return b[lang]; }
+
 export const TIP_CATEGORIES: TipCategory[] = [
-  // ── 基本ルール ──────────────────────────────────────────────────────────
   {
     id: 'basics',
     icon: '📖',
-    name: '基本ルール',
+    name: { ja: '基本ルール', en: 'Basic Rules' },
     color: 'bg-amber-400',
-    description: 'はじめての人向け。盤面と勝敗条件を理解しよう',
+    description: { ja: 'はじめての人向け。盤面と勝敗条件を理解しよう', en: 'For beginners: the board and win conditions' },
     articles: [
       {
         id: 'how-to-play',
-        title: 'ゲームの目的と流れ',
-        summary: 'ネコとネズミ、それぞれの勝利条件を知ろう',
-        body: [
-          '「ニャンコ探偵とこそ泥ネズミ」は、チーズを盗んで逃げるネズミ1匹と、それを追う3匹のニャンコ探偵が対戦する推理ボードゲームです。',
-          'ネズミ側の目的は、11ターンのあいだネコに見つからずに逃げ切ること。ネコ側の目的は、11ターン以内にネズミが潜んでいるビルを捜索して発見することです。',
-          '盤面は5×5＝25個のビル（ネズミがいる場所）と、その間に並ぶ4×4のマス（ネコがいる場所）で構成されます。ネコの1マスは、隣接する4つのビルを捜索できます。',
-          'まずネコ3匹を配置し、次にネズミがスタート位置を決めます。その後はネコ→ネズミの順で交互に行動し、これを11ターン繰り返します。',
-        ],
+        title: { ja: 'ゲームの目的と流れ', en: 'Goal and flow of the game' },
+        summary: { ja: 'ネコとネズミ、それぞれの勝利条件を知ろう', en: 'Win conditions for cats and mouse' },
+        body: {
+          ja: [
+            '「ニャンコ探偵とこそ泥ネズミ」は、チーズを盗んで逃げるネズミ1匹と、それを追う3匹のニャンコ探偵が対戦する推理ボードゲームです。',
+            'ネズミ側の目的は、11ターンのあいだネコに見つからずに逃げ切ること。ネコ側の目的は、11ターン以内にネズミが潜むビルを捜索して発見することです。',
+            '盤面は5×5＝25個のビル（ネズミがいる場所）と、その間に並ぶ4×4のマス（ネコがいる場所）で構成されます。ネコの1マスは隣接する4つのビルを捜索できます。',
+            'まずネコ3匹を配置し、次にネズミがスタート位置を決めます。その後ネコ→ネズミの順で交互に行動し、これを11ターン繰り返します。',
+          ],
+          en: [
+            'Detective Cats & The Cheese Thief is a deduction board game: one mouse that stole the cheese flees, while three detective cats give chase.',
+            'The mouse wins by avoiding the cats for 11 turns. The cats win by searching the building where the mouse hides within those 11 turns.',
+            'The board has 25 buildings (5×5, where the mouse hides) and a 4×4 grid of squares between them (where cats stand). Each cat square can search its 4 adjacent buildings.',
+            'First the 3 cats are placed, then the mouse picks a start. After that, cats and mouse alternate (cats first) for 11 turns.',
+          ],
+        },
       },
       {
         id: 'turn-order',
-        title: 'ターンの進み方',
-        summary: 'ネコが先、ネズミが後。この順番がカギ',
-        body: [
-          '各ターンは必ず「ネコ3匹の行動 → ネズミの移動」の順で進みます。ネコが先に動くため、ネズミは常にネコの最新の配置を見てから逃げ先を決められます。',
-          'ネコは1匹ずつ「移動」または「捜索」のどちらかを選びます。3匹全員が行動を終えると、ネズミの番です。',
-          'ネズミは隣接するビルへ1マス移動します。動いたあとには「痕跡（チーズ）」が残りますが、これはネコがそのビルを捜索するまで見えません。',
-          '最終ターン（11ターン目）はネコが捜索して終了です。ここでネズミを発見できなければネズミの逃げ切り勝ちとなります。',
-        ],
+        title: { ja: 'ターンの進み方', en: 'How turns work' },
+        summary: { ja: 'ネコが先、ネズミが後。この順番がカギ', en: 'Cats move first, then the mouse' },
+        body: {
+          ja: [
+            '各ターンは必ず「ネコ3匹の行動 → ネズミの移動」の順で進みます。ネコが先に動くため、ネズミは常にネコの最新の配置を見てから逃げ先を決められます。',
+            'ネコは1匹ずつ「移動」または「捜索」のどちらかを選びます。3匹全員が行動を終えると、ネズミの番です。',
+            'ネズミは隣接するビルへ1マス移動します。動いたあとには「痕跡（チーズ）」が残りますが、ネコがそのビルを捜索するまで見えません。',
+            '最終ターン（11ターン目）はネコの捜索で終了です。ここで発見できなければネズミの逃げ切り勝ちです。',
+          ],
+          en: [
+            'Each turn always goes: all 3 cats act, then the mouse moves. Since cats go first, the mouse always sees the latest cat positions before deciding.',
+            'Each cat chooses either to move or to search. Once all three have acted, it is the mouse\'s turn.',
+            'The mouse moves one step to an adjacent building. It leaves a trail (cheese) behind, hidden until a cat searches that building.',
+            'The final 11th turn ends with the cats searching. If they fail to find the mouse, the mouse escapes and wins.',
+          ],
+        },
       },
       {
         id: 'trail-markers',
-        title: '痕跡（チーズ）の仕組み',
-        summary: '通った場所には戻れない。痕跡は両者の生命線',
-        body: [
-          'ネズミが移動すると、移動前にいたビルに「痕跡」が残ります。痕跡は全部で最大11個。これがネズミの逃げた経路そのものです。',
-          '重要なルール：ネズミは痕跡を残したビルには二度と入れません。つまり進めば進むほど、自分の行ける範囲が狭まっていきます。',
-          'ネコがあるビルを捜索して痕跡を発見すると、その痕跡が「発見済み」になります。発見済みの痕跡は、ネズミがどの方向へ逃げたかを推理する手がかりになります。',
-          'ネズミ側は、痕跡で自分の退路を塞いでしまわないよう、盤面の広い側へ逃げる意識が大切です。',
-        ],
+        title: { ja: '痕跡（チーズ）の仕組み', en: 'How trail markers work' },
+        summary: { ja: '通った場所には戻れない。痕跡は両者の生命線', en: 'You cannot revisit your own trail' },
+        body: {
+          ja: [
+            'ネズミが移動すると、移動前にいたビルに痕跡が残ります。痕跡は最大11個。これがネズミの逃げた経路そのものです。',
+            '重要：ネズミは痕跡を残したビルには二度と入れません。進むほど自分の行ける範囲が狭まります。',
+            'ネコが痕跡を発見すると、その痕跡が「発見済み」になり、ネズミの逃げた方向を推理する手がかりになります。',
+            'ネズミ側は、痕跡で自分の退路を塞がないよう、盤面の広い側へ逃げる意識が大切です。',
+          ],
+          en: [
+            'When the mouse moves, a trail is left on the building it just left. Up to 11 trails mark the entire escape route.',
+            'Key rule: the mouse can never re-enter a building with its trail. The more it moves, the smaller its reachable area becomes.',
+            'When a cat finds a trail, it becomes "discovered" and hints at the direction the mouse fled.',
+            'As the mouse, avoid sealing off your own escape — head toward the open side of the board.',
+          ],
+        },
       },
       {
         id: 'win-lose',
-        title: '勝敗が決まる3つのパターン',
-        summary: '発見・袋小路・逃げ切りの違い',
-        body: [
-          'ネコの勝ち①「発見」：ネコが捜索したビルにネズミが潜んでいた場合、その場で捕獲、ネコの勝利です。',
-          'ネコの勝ち②「袋小路」：ネズミが痕跡や盤面の端に囲まれ、移動できるビルがひとつもなくなった場合もネコの勝ちです。逃げ道を自分で塞がないよう注意。',
-          'ネズミの勝ち「逃げ切り」：11ターン目のネコの捜索を生き延びれば、ネズミの勝利。チーズを持ったまま無事に逃走成功です。',
-        ],
-      },
-      {
-        id: 'board-layout',
-        title: '盤面の見方を覚えよう',
-        summary: 'ビルとマス、2つのグリッドの関係',
-        body: [
-          'この盤面には2種類のグリッドが重なっています。1つは5×5＝25個の「ビル」のグリッド。ここはネズミが潜む場所です。もう1つは4×4＝16個の「マス」のグリッド。ここはネコが立つ場所です。',
-          'ネコの1マスは、その四隅に接する4つのビルにちょうど囲まれています。だからネコは1か所にいながら4ビルを捜索できるのです。',
-          '盤面を読むときは「自分（ネズミ）はビルの上を、相手（ネコ）はマスの上を動く」と覚えておくと混乱しません。両者が動く土台が違うことが、このゲームの戦略の奥深さを生んでいます。',
-          'ビルには列がA〜E、行が1〜5のように座標がついています。痕跡の位置やネコの配置を座標で把握すると、頭の中で先読みしやすくなります。',
-        ],
-      },
-      {
-        id: 'modes',
-        title: '3つの対戦モードの違い',
-        summary: '2人対戦・CPU戦の使い分け',
-        body: [
-          '「同じ端末で2人対戦」は、1台のスマホを交代で操作して友達や家族と遊ぶモードです。画面を相手に見せないよう、引き継ぎ画面をはさんで進行します。',
-          '「CPU対戦（自分がネズミ役）」は、あなたが逃げるネズミを操作し、3匹のネコをコンピュータが動かします。追い詰められる緊張感を味わいたい人向けです。',
-          '「CPU対戦（自分がネコ役）」は、あなたが3匹のネコを操作してネズミを捕まえます。推理して網を絞っていく楽しさが味わえます。',
-          'まずはCPU戦でルールに慣れ、慣れてきたら2人対戦で読み合いを楽しむのがおすすめの流れです。',
-        ],
+        title: { ja: '勝敗が決まる3つのパターン', en: 'Three ways the game ends' },
+        summary: { ja: '発見・袋小路・逃げ切りの違い', en: 'Found, trapped, or escaped' },
+        body: {
+          ja: [
+            'ネコの勝ち①「発見」：捜索したビルにネズミがいれば、その場で捕獲・ネコの勝ち。',
+            'ネコの勝ち②「袋小路」：ネズミが痕跡や盤の端に囲まれ、動けるビルがなくなった場合もネコの勝ち。',
+            'ネズミの勝ち「逃げ切り」：11ターン目のネコの捜索を生き延びればネズミの勝ち。チーズを持って逃走成功です。',
+          ],
+          en: [
+            'Cats win #1 "Found": if a searched building holds the mouse, it is caught instantly.',
+            'Cats win #2 "Trapped": if the mouse is boxed in by trails and the board edge with no legal move, the cats win.',
+            'Mouse wins "Escaped": survive the cats\' search on turn 11 and the mouse gets away with the cheese.',
+          ],
+        },
       },
     ],
   },
 
-  // ── ネズミ攻略 ──────────────────────────────────────────────────────────
   {
     id: 'mouse',
     icon: '🐭',
-    name: 'ネズミ攻略',
+    name: { ja: 'ネズミ攻略', en: 'Mouse Tips' },
     color: 'bg-green-400',
-    description: '逃げる側のコツ。読まれない動きを身につけよう',
+    description: { ja: '逃げる側のコツ。読まれない動きを身につけよう', en: 'For the fleeing side: stay unpredictable' },
     articles: [
       {
         id: 'start-far',
-        title: 'スタート位置は「ネコから遠く」が鉄則',
-        summary: '初手の捜索範囲を避けるだけで生存率が上がる',
-        body: [
-          'ネズミの配置はネコの配置を見た後に決められます。これは大きなアドバンテージです。',
-          'ネコは序盤、自分の周囲4ビルを捜索することが多いため、3匹のネコすべてから距離を取れる位置を選びましょう。盤の中央は一見安全そうですが、どのネコからも近くなりがちで危険です。',
-          'おすすめは盤の角や辺。ネコが到達するまで時間がかかるうえ、捜索される確率も下がります。ただし角は逃げ道が少ないので、数ターン後には中央寄りへ抜ける計画を立てておきましょう。',
-        ],
+        title: { ja: 'スタートは「ネコから遠く」が鉄則', en: 'Start far from the cats' },
+        summary: { ja: '初手の捜索範囲を避けるだけで生存率UP', en: 'Avoid the cats\' first searches' },
+        body: {
+          ja: [
+            'ネズミの配置はネコの配置を見た後に決められます。これは大きなアドバンテージです。',
+            'ネコは序盤、自分の周囲を捜索しがち。3匹すべてから距離を取れる位置を選びましょう。中央はどのネコからも近く危険です。',
+            'おすすめは角や辺。ただし逃げ道が少ないので、数ターン後には中央寄りへ抜ける計画を立てましょう。',
+          ],
+          en: [
+            'You place the mouse after seeing the cats — a big advantage.',
+            'Cats tend to search nearby early on, so pick a spot far from all three. The center is risky since it is close to everyone.',
+            'Corners and edges are good starts, but have few exits — plan to slip toward the center after a few turns.',
+          ],
+        },
       },
       {
         id: 'keep-options',
-        title: '「行ける場所」を減らさない動き方',
-        summary: '袋小路で自滅しないための退路管理',
-        body: [
-          'ネズミの敗因で多いのが、痕跡で自分を囲んでしまう「自滅」です。移動するときは、その先からさらに複数の方向へ逃げられるかを常に意識しましょう。',
-          '具体的には、壁際を這うように進むと片側が盤の端、もう片側が痕跡となり、あっという間に退路が尽きます。できるだけ盤の開けた方向へ、選択肢を残して動くのがコツです。',
-          '迷ったら「次のターン、自分はいくつのビルへ動けるか」を数えてみてください。常に2方向以上を確保できていれば、ネコに先回りされても回避しやすくなります。',
-        ],
+        title: { ja: '「行ける場所」を減らさない動き方', en: 'Keep your escape routes open' },
+        summary: { ja: '袋小路で自滅しないための退路管理', en: 'Avoid trapping yourself' },
+        body: {
+          ja: [
+            'ネズミの敗因で多いのが、痕跡で自分を囲む「自滅」です。移動先からさらに複数方向へ逃げられるかを常に意識しましょう。',
+            '壁際を這うと片側が端、もう片側が痕跡となり、すぐ退路が尽きます。盤の開けた方向へ選択肢を残して動きましょう。',
+            '迷ったら「次に自分はいくつのビルへ動けるか」を数えてください。常に2方向以上を確保できれば回避しやすくなります。',
+          ],
+          en: [
+            'A common loss is sealing yourself in with trails. Always check that your destination still has several exits.',
+            'Hugging walls puts the edge on one side and trails on the other — routes vanish fast. Move toward open space.',
+            'When unsure, count how many buildings you can reach next turn. Keeping 2+ options makes you hard to corner.',
+          ],
+        },
       },
       {
         id: 'unpredictable',
-        title: '直線移動は読まれる',
-        summary: '痕跡2つで進行方向がバレる',
-        body: [
-          'ネコは発見した痕跡が2つ以上あると、その2点を結んだ方向にネズミが進んでいると推理し、先回りを狙ってきます。',
-          'そのため、ずっと同じ方向へ一直線に逃げるのは危険です。ときどき直角に曲がる、あるいは進行方向を変えることで、ネコの予測を外せます。',
-          'ただし闇雲に方向転換すると退路を塞ぐリスクもあります。「読まれない動き」と「退路の確保」のバランスを取ることが、上級ネズミへの第一歩です。',
-        ],
+        title: { ja: '直線移動は読まれる', en: 'Straight lines get read' },
+        summary: { ja: '痕跡2つで進行方向がバレる', en: 'Two trails reveal your direction' },
+        body: {
+          ja: [
+            'ネコは発見した痕跡が2つあると、その方向にネズミが進んでいると推理し先回りします。',
+            'ずっと同じ方向へ一直線は危険。ときどき直角に曲がって予測を外しましょう。',
+            'ただし方向転換は退路を塞ぐリスクも。「読まれない動き」と「退路確保」のバランスが上級者への鍵です。',
+          ],
+          en: [
+            'With two discovered trails, cats infer your direction and cut you off ahead.',
+            'A long straight escape is dangerous — turn at right angles now and then to break their read.',
+            'But turning can seal your routes. Balancing unpredictability with keeping exits is the mark of a strong mouse.',
+          ],
+        },
       },
       {
         id: 'late-game',
-        title: '終盤の立ち回り',
-        summary: '残りターンを数えて安全地帯へ',
-        body: [
-          '残り3〜4ターンになったら、ネコ3匹の位置から最も遠いエリアを目指しましょう。ネコは1ターンに1マスしか動けないため、距離さえ取れば終盤の捜索範囲に入りません。',
-          'このとき、すでに発見されている痕跡から離れる方向へ動くと、ネコの推理を振り切りやすくなります。',
-          '最終ターンはネコの捜索で終わります。11ターン目に自分がいるビルがネコの捜索範囲外なら勝ちです。最後の1手は、周囲にネコがいないビルを慎重に選びましょう。',
-        ],
-      },
-      {
-        id: 'use-center',
-        title: '中央を「ハブ」として使う',
-        summary: '四方に逃げられる位置の価値',
-        body: [
-          '中央付近のビルは、上下左右すべてに隣接ビルがあるため自由度が最も高い場所です。序盤は危険でも、中盤に一度中央を経由しておくと、その後どの方向へも展開できます。',
-          'ネコに片側へ追われたとき、中央を通っておけば反対側へ抜ける選択肢が残ります。壁際に張り付くより、盤面の中心を「逃走のハブ」として意識しましょう。',
-          'ただし中央は3匹のネコが集まりやすい場所でもあります。長居は禁物。あくまで通過点として、滞在は1〜2ターンに留めるのが安全です。',
-        ],
-      },
-      {
-        id: 'fake-direction',
-        title: 'わざと痕跡を残して欺く',
-        summary: '見せ痕跡でネコの先回りを誘う',
-        body: [
-          '上級ネズミは、痕跡をあえて見せて相手を誘導します。ある方向へ数歩進んで痕跡を作り、ネコがその延長線へ先回りした瞬間に直角へ折れる――いわゆるフェイントです。',
-          'ネコは2つの痕跡から進行方向を推理します。その習性を逆手に取り、わざと一直線の痕跡を作ってから方向転換すると、先回りしたネコを置き去りにできます。',
-          'リスクもあります。フェイントのために遠回りすると、その分だけ退路を消費します。残りターンと自由度に余裕があるときだけ狙う、上級者向けのテクニックです。',
-        ],
+        title: { ja: '終盤の立ち回り', en: 'Endgame play' },
+        summary: { ja: '残りターンを数えて安全地帯へ', en: 'Count turns, reach safety' },
+        body: {
+          ja: [
+            '残り3〜4ターンになったら、ネコ3匹から最も遠いエリアを目指しましょう。ネコは1ターン1マスしか動けません。',
+            '発見済みの痕跡から離れる方向へ動くと、ネコの推理を振り切りやすくなります。',
+            '最終ターンはネコの捜索で終了。11ターン目に自分がいるビルが捜索範囲外なら勝ち。最後の1手は慎重に。',
+          ],
+          en: [
+            'With 3–4 turns left, head to the area farthest from all cats. Cats move only one square per turn.',
+            'Moving away from discovered trails helps you shake off their deductions.',
+            'The final turn ends with their search. If your building is out of range on turn 11, you win — choose that last move carefully.',
+          ],
+        },
       },
     ],
   },
 
-  // ── ネコ攻略 ────────────────────────────────────────────────────────────
   {
     id: 'cat',
     icon: '🐱',
-    name: 'ネコ攻略',
+    name: { ja: 'ネコ攻略', en: 'Cat Tips' },
     color: 'bg-blue-400',
-    description: '追う側のコツ。3匹の連携で追い詰めよう',
+    description: { ja: '追う側のコツ。3匹の連携で追い詰めよう', en: 'For the chasers: coordinate all three' },
     articles: [
       {
         id: 'cover-efficiently',
-        title: '捜索は「今いるマスを完全に」',
-        summary: '移動の無駄をなくして捜索数を最大化',
-        body: [
-          'ネコの1マスは隣接する4ビルを捜索できます。むやみに移動するより、今いるマスの未捜索ビルを先に潰すほうが効率的です。',
-          '11ターン×3匹＝33回の行動で、25ビルすべてをカバーすることは理論上可能です。移動を最小限にし、捜索回数を増やすことを意識しましょう。',
-          'ただし全マスを均等に潰すだけでは、ネズミの移動に追いつけません。捜索で得た「いなかった」情報を使い、ネズミがいる可能性の高いエリアへ重点的に網を絞っていくのがポイントです。',
-        ],
+        title: { ja: '捜索は「今いるマスを完全に」', en: 'Fully clear your current square' },
+        summary: { ja: '移動の無駄をなくして捜索数を最大化', en: 'Minimize wasted moves' },
+        body: {
+          ja: [
+            'ネコの1マスは隣接4ビルを捜索できます。むやみに移動するより、今いるマスの未捜索ビルを先に潰すほうが効率的です。',
+            '11ターン×3匹＝33回の行動で25ビルをカバーするのは理論上可能。移動を最小限にして捜索回数を増やしましょう。',
+            '「いなかった」情報を使い、ネズミがいる可能性が高いエリアへ網を絞るのがポイントです。',
+          ],
+          en: [
+            'Each cat square searches 4 buildings. Rather than wandering, clear the unsearched buildings where you stand.',
+            '33 actions (11 turns × 3 cats) can cover all 25 buildings in theory. Minimize moves, maximize searches.',
+            'Use "nobody here" results to narrow the net toward the areas where the mouse is likely hiding.',
+          ],
+        },
       },
       {
         id: 'zone-defense',
-        title: '3匹でゾーンを分担する',
-        summary: '痕跡を見つけるまでは盤面を分けて捜索',
-        body: [
-          'まだ痕跡を発見していない序盤は、3匹がバラバラに動くと捜索範囲が重複して非効率です。盤面を縦に3分割し、各ネコが左・中央・右を担当すると、無駄なく全体をカバーできます。',
-          'この「ゾーン分担」により、どこにネズミがいても数ターンで誰かの捜索範囲に入ります。ネズミが安全に隠れ続けられる場所をなくすのが狙いです。',
-          '痕跡を1つでも見つけたら分担は解除。全員でその痕跡を中心に動く「追跡フェーズ」へ切り替えましょう。',
-        ],
+        title: { ja: '3匹でゾーンを分担する', en: 'Split the board into zones' },
+        summary: { ja: '痕跡を見つけるまでは分担して捜索', en: 'Divide and search until a trail appears' },
+        body: {
+          ja: [
+            '痕跡未発見の序盤は、バラバラだと捜索が重複します。盤面を3分割し、各ネコが左・中央・右を担当すると効率的です。',
+            'これでどこにネズミがいても数ターンで誰かの捜索範囲に入ります。安全に隠れ続けられる場所をなくすのが狙いです。',
+            '痕跡を見つけたら分担は解除。全員でその痕跡を中心に動く追跡フェーズへ切り替えます。',
+          ],
+          en: [
+            'Early on, uncoordinated cats overlap. Split the board into three and let each cat cover left, center, and right.',
+            'Then wherever the mouse is, it enters someone\'s search range within a few turns — leaving no safe hiding spot.',
+            'Once a trail appears, drop the zones and switch to a pursuit phase centered on it.',
+          ],
+        },
       },
       {
         id: 'read-direction',
-        title: '痕跡から進行方向を読む',
-        summary: '2つの痕跡を結べば未来が見える',
-        body: [
-          '痕跡を2つ発見できれば、ネズミの進行方向が推理できます。古い痕跡から新しい痕跡へ向かうベクトルが、ネズミの逃走方向です。',
-          'この方向の延長線上にネズミがいる可能性が高いので、1匹は進行方向の先へ「先回り」させましょう。ネズミが同じペースで逃げると仮定し、数マス先を狙うのがコツです。',
-          'ただしネズミも方向転換してきます。先回り役のほかに、現在の痕跡近くを直接追う「追跡役」も残しておくと、転換にも対応できます。',
-        ],
+        title: { ja: '痕跡から進行方向を読む', en: 'Read direction from trails' },
+        summary: { ja: '2つの痕跡を結べば未来が見える', en: 'Two trails point to the future' },
+        body: {
+          ja: [
+            '痕跡を2つ見つければ進行方向が読めます。古い痕跡から新しい痕跡へのベクトルが逃走方向です。',
+            'その延長線上にネズミがいる可能性が高いので、1匹を先回りさせましょう。同じペースで逃げると仮定し数マス先を狙います。',
+            'ただし方向転換にも備え、現在地を直接追う追跡役も残しておくと万全です。',
+          ],
+          en: [
+            'Two trails reveal direction: the vector from the older to the newer trail is the escape heading.',
+            'The mouse is likely along that line, so send one cat ahead to intercept, aiming a few squares forward.',
+            'But keep a chaser on the latest position too, in case the mouse turns.',
+          ],
+        },
       },
       {
         id: 'encircle',
-        title: '逃げ道を塞ぐ包囲戦',
-        summary: '捕まえるより「逃げ場をなくす」',
-        body: [
-          'ネコが強くなる最大のコツは、ネズミを直接探すのではなく「逃げ場を奪う」ことです。痕跡と盤の端、そしてネコ自身でネズミを囲い込みましょう。',
-          '役割を分けると効果的です。1匹が進行方向を塞ぐ「先回り役」、1匹が現在地を追う「追跡役」、もう1匹が横の逃げ道を断つ「封鎖役」。この3方向からの圧力でネズミの選択肢を削ります。',
-          'ネズミは痕跡のあるビルに戻れません。すでにある痕跡を「壁」として利用し、残った逃げ道を1つずつ塞いでいけば、やがて袋小路に追い込めます。',
-        ],
-      },
-      {
-        id: 'which-cat-first',
-        title: 'どのネコから動かすべきか',
-        summary: '行動順を選べる強みを活かす',
-        body: [
-          'ネコは3匹を好きな順番で動かせます。この順番選びが、上級者と初心者の差が出るポイントです。',
-          '基本は「情報を得る行動を先に」。まず捜索でネズミの居場所候補を絞り、その結果を見てから残りのネコの動きを決めると、3匹を無駄なく使えます。',
-          '逆に、確実に捕まえられる見込みがあるときは、包囲が崩れない順番で動かすことが大切です。先に動かしたネコが逃げ道を空けてしまわないよう、封鎖役を最後に残すと安全です。',
-        ],
-      },
-      {
-        id: 'corner-trap',
-        title: '角・端へ追い込む基本形',
-        summary: 'ネズミの自由度を構造的に削る',
-        body: [
-          '盤面の角は隣接ビルが2つ、辺は3つしかありません。中央の4方向に比べて逃げ道が少ないため、ネコにとっては絶好の追い込み先です。',
-          'ネズミを中央から角へ押し出すように捜索範囲を広げていくと、相手の選択肢が自然に減っていきます。痕跡が増える終盤ほど、この「角詰め」は効果を発揮します。',
-          'ネズミが角に入ったら、出口にあたる2方向のビルを順に塞ぎましょう。1ターンで両方は塞げなくても、痕跡と組み合わせれば袋小路に持ち込めます。',
-        ],
-      },
-    ],
-  },
-
-  // ── 上級テクニック ──────────────────────────────────────────────────────
-  {
-    id: 'advanced',
-    icon: '🎓',
-    name: '上級テクニック',
-    color: 'bg-purple-400',
-    description: '勝率を上げる一歩進んだ考え方',
-    articles: [
-      {
-        id: 'count-freedom',
-        title: '「自由度」で盤面を評価する',
-        summary: 'ネズミが行ける数を数える思考法',
-        body: [
-          '上級者は盤面を「自由度」という尺度で見ます。自由度とは、ネズミがそこから移動できるビルの総数です。',
-          'ネズミ側は自由度の高い位置を保つことで、ネコにどう動かれても回避しやすくなります。逆にネコ側は、ネズミの自由度が下がる方向へ圧力をかけることで、捕獲に近づきます。',
-          'すべての手を打つ前に「この移動でネズミ／自分の自由度はどう変わるか」を一瞬考える習慣をつけると、終盤の詰めが格段に強くなります。',
-        ],
-      },
-      {
-        id: 'bluff-placement',
-        title: 'ネズミの初期配置で心理戦',
-        summary: '「いかにも安全な場所」は読まれる',
-        body: [
-          '対人戦では、ネズミの初期配置に心理が出ます。角は安全に見えますが、上手な相手は「角に隠れがち」という傾向を読んで先に角周辺を捜索してきます。',
-          'あえて中央寄りのリスクある位置からスタートし、序盤の数手で安全地帯へ抜けるという高度な戦法もあります。読みが当たれば、ネコの初動を大きく外せます。',
-          '毎回同じパターンで配置しないこと。相手に傾向を覚えられた時点で不利になります。',
-        ],
-      },
-      {
-        id: 'sacrifice-search',
-        title: '「いなかった」も貴重な情報',
-        summary: '空振り捜索を無駄にしない',
-        body: [
-          'ネコの捜索が空振りしても、それは「そのビルにネズミはいない」という確定情報です。盤面からネズミの居場所候補を1つ消したと考えましょう。',
-          '捜索済みのエリアを地図のように頭に入れ、まだ調べていない＝ネズミがいる可能性のあるエリアへ網を絞っていきます。',
-          'ただし、ネズミは移動するため、一度「いなかった」ビルにも後から入ってくる可能性があります。痕跡の方向と合わせて、いつの情報なのかを意識して使い分けましょう。',
-        ],
-      },
-    ],
-  },
-
-  // ── ボードゲームコラム ──────────────────────────────────────────────────
-  {
-    id: 'column',
-    icon: '📰',
-    name: 'ボードゲームコラム',
-    color: 'bg-rose-400',
-    description: '元ネタや、おうちで遊べる関連ゲームの話',
-    articles: [
-      {
-        id: 'origin',
-        title: 'このゲームのルーツ「逃走系ボードゲーム」',
-        summary: '追いかけっこゲームの魅力とは',
-        body: [
-          '1人が逃げ、複数人が協力して追い詰める――この「非対称な追いかけっこ」は、ボードゲームの世界で長く愛されてきた人気ジャンルです。',
-          '逃げる側は1人だけ情報を隠し持ち、追う側はわずかな手がかりから居場所を推理する。この情報の非対称性が、何度遊んでも飽きない駆け引きを生みます。',
-          '本作「ニャンコ探偵とこそ泥ネズミ」も、この伝統的な面白さをスマホで手軽に味わえるようデザインしました。チーズを盗んだネズミと、それを追うニャンコ探偵という愛らしい設定で、家族みんなで楽しめます。',
-        ],
-      },
-      {
-        id: 'real-boardgames',
-        title: 'おうちで遊べる！似たボードゲーム',
-        summary: '実物の名作を紹介します',
-        body: [
-          'デジタルで遊んで気に入ったら、ぜひ実物のボードゲームも体験してみてください。テーブルを囲んで遊ぶ臨場感は格別です。',
-          '「ねことねずみの大レース」は、ネズミがチーズを集めながらネコから逃げる、本作とまさに同じテーマの名作。小さな子どもから大人まで一緒に遊べる、サイコロ運と度胸のゲームです。',
-          '推理して追い詰める面白さが好きなら「クルード」や「犯人は踊る」もおすすめ。誰が・どこで・何をしたかを推理する、定番の犯人探しゲームです。',
-          'カワダの「シティチェイス」は、まさに街を逃げる犯人を追うボードゲーム。本作のモチーフに近い、追いかけっこの緊張感が味わえます。',
-        ],
-      },
-      {
-        id: 'strategic-games',
-        title: '戦略が光るボードゲーム名作選',
-        summary: '読み合いが好きな人へおすすめ3作',
-        body: [
-          '本作の「隠れて逃げる相手を、限られた情報から推理して追い詰める」面白さが気に入ったなら、同じく戦略性の高いボードゲームの名作もきっと楽しめます。',
-          '①「スコットランドヤード」：ロンドンの街を逃げ回る怪盗Xを、複数の探偵が協力して追い詰める、隠れ移動ゲームの金字塔。1983年のドイツ年間ゲーム大賞を受賞した、本作とまさに同じジャンルの元祖的存在です。逃げる側と追う側に分かれる非対称の駆け引きが堪能できます。',
-          '②「ガイスター」：2人用の心理戦ゲーム。相手のコマが「良いオバケ」か「悪いオバケ」か分からないまま戦う、ブラフと読み合いの傑作です。ルールはシンプルなのに奥が深く、短時間で何度も遊びたくなります。',
-          '③「ブラフ」：全員のサイコロの出目を推理し合う、観察力と度胸が試されるダイスゲーム。大人数でわいわい盛り上がれる定番で、心理戦の入門としても最適です。',
-          'いずれも「相手の手を読む」ことが勝負の鍵。本作で鍛えた推理力を、テーブルの上でも活かしてみてください。',
-        ],
-      },
-      {
-        id: 'family-play',
-        title: '家族で遊ぶときのコツ',
-        summary: '年齢差があっても盛り上がる遊び方',
-        body: [
-          '子どもと大人で実力差があるときは、大人がネズミ（逃げる側）を持つと白熱します。3匹のネコを子どもたちで分担すれば、自然とチーム戦になり協力する楽しさが生まれます。',
-          '逆に、大人がネコ役で手加減するのも一案。捜索範囲をあえて少し外して、子どものネズミが逃げ切る達成感を演出してあげましょう。',
-          '勝敗のあとは「どこで捕まりそうだった？」と振り返ると、次の戦略を考える力が育ちます。推理ゲームは、遊びながら論理的思考が鍛えられる知育の側面もあります。',
-        ],
-      },
-    ],
-  },
-
-  // ── よくある質問 ────────────────────────────────────────────────────────
-  {
-    id: 'faq',
-    icon: '❓',
-    name: 'よくある質問',
-    color: 'bg-teal-400',
-    description: '操作やルールの疑問をまとめて解決',
-    articles: [
-      {
-        id: 'faq-trail-search',
-        title: 'Q. 痕跡のあるビルは捜索できる？',
-        summary: 'ネコ視点とネズミ視点の違い',
-        body: [
-          'はい、ネコは痕跡のあるビルも捜索できます。ネコ側のプレイヤーには痕跡が見えていないため、すべての隣接ビルが捜索対象になります。',
-          '一方、ネズミは痕跡を残したビルには二度と入れません。これは「同じ場所を通れない」という移動制限であり、捜索のルールとは別物です。',
-          'つまり、痕跡のあるビルはネコにとっては「ネズミがいるかもしれない場所」ですが、ネズミにとっては「もう行けない場所」。両者で意味が異なる点を押さえておきましょう。',
-        ],
-      },
-      {
-        id: 'faq-turn-count',
-        title: 'Q. 「11ターン」はどう数える？',
-        summary: 'ターンの区切りをはっきりさせる',
-        body: [
-          '1ターンは「ネコ3匹の行動 → ネズミの移動」をワンセットとして数えます。これを11回繰り返すと、ゲーム終了です。',
-          '最後の11ターン目はネコの捜索で締めくくられます。ここでネズミが見つからなければ、ネズミの逃げ切り勝ちが確定します。',
-          '画面上部のターン表示とドットで、今が何ターン目かを確認できます。終盤は残りターンを意識して、安全な逃走ルートを逆算しましょう。',
-        ],
-      },
-      {
-        id: 'faq-operation',
-        title: 'Q. ネコの操作方法がわからない',
-        summary: 'タップだけのかんたん操作',
-        body: [
-          'ネコのターンでは、まず動かしたいネコをタップして選びます。選択中のネコは黄色い枠で示されます。まだ行動していないネコは緑の枠でハイライトされます。',
-          'ネコを選んだら、移動先の通路マスをタップすれば移動、捜索したい隣接ビルをタップすれば捜索です。1匹につき「移動」か「捜索」のどちらか1回を行います。',
-          '3匹すべてが行動し終えると、自動的にネズミのターンへ進みます。動かす順番は自由なので、捜索結果を見ながら次のネコを決められます。',
-        ],
-      },
-      {
-        id: 'faq-data',
-        title: 'Q. 個人情報やデータは保存される？',
-        summary: '安心して遊べる設計です',
-        body: [
-          '本ゲームはその進行状態をお使いの端末内だけで処理しており、氏名やメールアドレスなどの個人情報は一切収集しません。',
-          'ゲームの記録もサーバーには送信されず、ブラウザを閉じると進行中のゲームはリセットされます。アカウント登録も不要で、URLを開けばすぐに遊べます。',
-          '広告やアフィリエイトリンクの利用については、メニュー画面のプライバシーポリシーに詳しく記載しています。あわせてご確認ください。',
-        ],
+        title: { ja: '逃げ道を塞ぐ包囲戦', en: 'Encircle to cut off escape' },
+        summary: { ja: '捕まえるより「逃げ場をなくす」', en: 'Remove escape, don\'t just chase' },
+        body: {
+          ja: [
+            'ネコが強くなる最大のコツは、直接探すより「逃げ場を奪う」こと。痕跡・盤の端・ネコ自身でネズミを囲みます。',
+            '役割を分けましょう。進行方向を塞ぐ先回り役、現在地を追う追跡役、横を断つ封鎖役。3方向の圧力で選択肢を削ります。',
+            'ネズミは痕跡に戻れません。痕跡を壁として使い、残った逃げ道を1つずつ塞げば袋小路に追い込めます。',
+          ],
+          en: [
+            'The key to strong cats is removing escape, not just chasing. Box the mouse in with trails, the edge, and your cats.',
+            'Assign roles: an interceptor ahead, a chaser on its position, a blocker on the flank. Pressure from three sides.',
+            'The mouse cannot re-enter trails. Use them as walls and seal remaining exits one by one to force a dead end.',
+          ],
+        },
       },
     ],
   },

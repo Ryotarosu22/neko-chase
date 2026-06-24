@@ -8,8 +8,9 @@ import {
 import { getCpuCatDecisions, getCpuMouseDecision, getCpuMouseStartPosition } from './cpuLogic';
 import {
   playCatMove, playMouseMove, playEmpty, playCheese,
-  playCaught, playEscape, playTrapped,
+  playCaught, playEscape, playTrapped, startBgm, stopBgm,
 } from './sound';
+import { Lang, LangContext, STRINGS, StringKey } from './i18n';
 
 import ModeSelect from './components/ModeSelect';
 import PrivacyPolicy from './components/PrivacyPolicy';
@@ -36,8 +37,9 @@ function createGame(mode: GameMode, names?: { cat?: string; mouse?: string }, di
   return {
     mode,
     difficulty,
-    catName: names?.cat?.trim() || 'ニャンコ',
-    mouseName: names?.mouse?.trim() || 'マウス',
+    // 空のまま保持し、表示側で言語に応じた既定名（ニャンコ／Cat 等）に変換する
+    catName: names?.cat?.trim() || '',
+    mouseName: names?.mouse?.trim() || '',
     screen: mode === 'local' || mode === 'cpu_mouse' ? 'handoff_to_cat' : 'handoff_to_mouse',
     mousePosition: null,
     // cpu_cat: randomize immediately; others: human places during cat_setup
@@ -73,6 +75,23 @@ export default function App() {
   const [showTips, setShowTips] = useState(false);
   const [pendingMouseMove, setPendingMouseMove] = useState<Position | null>(null);
   const cpuTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 言語設定（ブラウザに保存して次回も保持）
+  const [lang, setLangState] = useState<Lang>(() => {
+    const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('neko-lang') : null;
+    return saved === 'en' ? 'en' : 'ja';
+  });
+  const setLang = (l: Lang) => {
+    setLangState(l);
+    try { localStorage.setItem('neko-lang', l); } catch { /* ignore */ }
+  };
+  const t = (key: StringKey) => STRINGS[key][lang];
+
+  // BGM：ゲーム開始で再生、メニューに戻ったら停止
+  useEffect(() => {
+    if (game) startBgm();
+    else stopBgm();
+  }, [game === null]);
 
   const isMousePhase = game?.screen === 'mouse_setup' || game?.screen === 'mouse_moving';
   const isCatPhase = game?.screen === 'cat_acting' || game?.screen === 'search_result';
@@ -342,6 +361,7 @@ export default function App() {
   }
 
   // ── Render ──
+  const content = (() => {
   if (!game) {
     if (showPrivacy) return <PrivacyPolicy onBack={() => setShowPrivacy(false)} />;
     if (showTips) return <TipsScreen onBack={() => setShowTips(false)} />;
@@ -420,7 +440,7 @@ export default function App() {
           <div className="absolute inset-0 flex items-center justify-center bg-black/10">
             <div className="bg-white rounded-2xl px-6 py-4 text-center shadow-lg">
               <div className="text-4xl mb-1">🐭</div>
-              <p className="font-bold text-gray-700">ネズミが逃げています…</p>
+              <p className="font-bold text-gray-700">{t('cpuMouseFleeing')}</p>
             </div>
           </div>
         )}
@@ -448,6 +468,13 @@ export default function App() {
         />
       )}
     </div>
+  );
+  })();
+
+  return (
+    <LangContext.Provider value={{ lang, setLang, t }}>
+      {content}
+    </LangContext.Provider>
   );
 }
 

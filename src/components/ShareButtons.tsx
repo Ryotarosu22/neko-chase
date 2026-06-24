@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { buildXShareUrl, buildLineShareUrl, nativeShare, copyLink } from '../share';
+import { useLang } from '../i18n';
 
 interface Props {
   text: string;        // シェア文（結果メッセージなど）
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export default function ShareButtons({ text, compact }: Props) {
+  const { t } = useLang();
   const [copied, setCopied] = useState(false);
 
   const handleNative = async () => {
@@ -35,7 +37,7 @@ export default function ShareButtons({ text, compact }: Props) {
 
   return (
     <div className="w-full">
-      <p className="text-xs text-gray-500 text-center mb-2">📣 友達にシェアして対戦しよう！</p>
+      <p className="text-xs text-gray-500 text-center mb-2">{t('shareInvite')}</p>
       <div className="flex justify-center gap-2 flex-wrap">
         <a
           href={buildXShareUrl(text)}
@@ -43,7 +45,7 @@ export default function ShareButtons({ text, compact }: Props) {
           rel="noopener noreferrer"
           className={`${btn} bg-black text-white`}
         >
-          <span>𝕏</span><span>ポスト</span>
+          <span>𝕏</span><span>{t('sharePost')}</span>
         </a>
         <a
           href={buildLineShareUrl(text)}
@@ -55,10 +57,10 @@ export default function ShareButtons({ text, compact }: Props) {
           <span>LINE</span>
         </a>
         <button onClick={handleNative} className={`${btn} bg-blue-500 text-white`}>
-          <span>📤</span><span>共有</span>
+          <span>📤</span><span>{t('shareShareBtn')}</span>
         </button>
         <button onClick={handleCopy} className={`${btn} bg-gray-100 text-gray-700`}>
-          <span>{copied ? '✅' : '🔗'}</span><span>{copied ? 'コピー済' : 'リンク'}</span>
+          <span>{copied ? '✅' : '🔗'}</span><span>{copied ? t('shareCopied') : t('shareLinkBtn')}</span>
         </button>
       </div>
     </div>

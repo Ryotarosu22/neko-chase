@@ -1,3 +1,5 @@
+import { useLang } from '../i18n';
+
 interface Props {
   to: 'mouse' | 'cat';
   onReady: () => void;
@@ -6,8 +8,9 @@ interface Props {
 }
 
 export default function HandoffScreen({ to, onReady, isSetup, name }: Props) {
+  const { t } = useLang();
   const isMouse = to === 'mouse';
-  const displayName = name || (isMouse ? 'マウス' : 'ニャンコ');
+  const displayName = name || (isMouse ? t('defaultMouse') : t('defaultCat'));
 
   return (
     <div
@@ -18,10 +21,10 @@ export default function HandoffScreen({ to, onReady, isSetup, name }: Props) {
       <div className="text-center animate-bounce-in">
         <div className="text-7xl mb-3">{isMouse ? '🐭' : '🐱'}</div>
         <h2 className="text-xl font-bold text-gray-800">
-          {displayName}さんの番です
+          {displayName}{t('yourTurn')}
         </h2>
         <p className="text-sm text-gray-500 mt-1">
-          {isMouse ? 'ネズミ側' : 'ネコ側'}・相手は目を閉じてください
+          {isMouse ? t('mouseSide') : t('catSide')}・{t('closeEyes')}
         </p>
       </div>
 
@@ -30,15 +33,9 @@ export default function HandoffScreen({ to, onReady, isSetup, name }: Props) {
           isMouse ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
         }`}
       >
-        {isMouse && isSetup && (
-          <p>📍 まず、ネズミの<strong>スタート位置</strong>を選んでください（ネコには見せないで！）</p>
-        )}
-        {isMouse && !isSetup && (
-          <p>🏃 ネズミの番です。移動先を選んでください。</p>
-        )}
-        {!isMouse && (
-          <p>🔍 ネコの番です。3匹のニャンコを動かして捜索しましょう！</p>
-        )}
+        {isMouse && isSetup && <p>{t('setupHint')}</p>}
+        {isMouse && !isSetup && <p>🏃 {t('mouseMoveHint')}</p>}
+        {!isMouse && <p>🔍 {t('selectCat')}</p>}
       </div>
 
       <button
@@ -47,7 +44,7 @@ export default function HandoffScreen({ to, onReady, isSetup, name }: Props) {
           isMouse ? 'bg-green-500' : 'bg-blue-500'
         }`}
       >
-        準備完了 →
+        {t('ready')}
       </button>
     </div>
   );

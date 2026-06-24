@@ -26,17 +26,25 @@ export function toggleMuted(): boolean {
   return muted;
 }
 
-/** 単音を鳴らす */
-function tone(opts: {
+interface ToneOpts {
   freq: number;
   duration: number;
   type?: OscillatorType;
   gain?: number;
   delay?: number;
   freqEnd?: number; // 周波数をスライドさせる（鳴き声・スイープ用）
-}): void {
+}
+
+/** 単音を鳴らす（SFXミュート時は無音） */
+function tone(opts: ToneOpts): void {
+  if (muted) return;
+  emit(opts);
+}
+
+/** ミュート判定なしで実際に発音する（BGMはSFXミュートと独立） */
+function emit(opts: ToneOpts): void {
   const c = getCtx();
-  if (!c || muted) return;
+  if (!c) return;
 
   const start = c.currentTime + (opts.delay ?? 0);
   const osc = c.createOscillator();
@@ -111,4 +119,57 @@ export function playEscape(): void {
 /** 袋小路（ネズミの負け・低い下降音） */
 export function playTrapped(): void {
   tone({ freq: 400, duration: 0.3, type: 'sawtooth', gain: 0.1, freqEnd: 120 });
+}
+
+// ─── BGM（軽快なループ） ───────────────────────────────────────────────────
+// SFXミュートとは独立した bgmEnabled で制御。合成音なので著作権フリー。
+
+let bgmEnabled = true;   // ユーザー設定（再生したいか）
+let bgmPlaying = false;  // 実際に鳴っているか
+let bgmTimer: ReturnType<typeof setTimeout> | null = null;
+let bgmStep = 0;
+
+// ハ長調の軽快なメロディ（freq=0 は休符）。[周波数, 拍数] の並び。
+const STEP = 0.26; // 1ステップの秒数
+const BGM_PATTERN: [number, number][] = [
+  [523, 1], [659, 1], [784, 1], [659, 1],
+  [587, 1], [698, 1], [880, 1], [698, 1],
+  [523, 1], [784, 1], [659, 1], [523, 1],
+  [587, 1], [494, 1], [523, 2], [0, 1],
+];
+
+export function isBgmEnabled(): boolean { return bgmEnabled; }
+
+function scheduleBgm(): void {
+  if (!bgmPlaying) return;
+  const [freq, beats] = BGM_PATTERN[bgmStep % BGM_PATTERN.length];
+  const dur = beats * STEP;
+  if (freq > 0) {
+    // 主旋律（控えめな音量）＋ 1オクターブ下の薄いベース
+    emit({ freq, duration: dur * 0.85, type: 'triangle', gain: 0.045 });
+    emit({ freq: freq / 2, duration: dur * 0.85, type: 'sine', gain: 0.03 });
+  }
+  bgmStep++;
+  bgmTimer = setTimeout(scheduleBgm, dur * 1000);
+}
+
+/** BGM再生開始（bgmEnabled のときだけ実際に鳴る。ユーザー操作後に呼ぶこと） */
+export function startBgm(): void {
+  if (!bgmEnabled || bgmPlaying) return;
+  bgmPlaying = true;
+  scheduleBgm();
+}
+
+/** BGM停止（設定は変えない） */
+export function stopBgm(): void {
+  bgmPlaying = false;
+  if (bgmTimer) { clearTimeout(bgmTimer); bgmTimer = null; }
+}
+
+/** BGMのオン/オフ切り替え。新しい有効状態を返す。 */
+export function toggleBgm(): boolean {
+  bgmEnabled = !bgmEnabled;
+  if (bgmEnabled) startBgm();
+  else stopBgm();
+  return bgmEnabled;
 }

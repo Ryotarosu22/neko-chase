@@ -111,27 +111,35 @@ function catSquaresWithUnknown(allKnown: Position[]): Position[] {
   return result;
 }
 
-/** Nearest cat-square with unknown buildings, avoiding squares claimed by other cats */
+/** そのマスで一度に捜索できる未捜索ビルの数 */
+function unknownCountAtSquare(sq: Position, allKnown: Position[]): number {
+  return getBuildingsAtCatSquare(sq.row, sq.col).filter((b) => !inList(b, allKnown)).length;
+}
+
+/**
+ * 次に向かうべきマスを選ぶ。
+ * 「一度に多くの未捜索ビルを潰せる ＞ 近い ＞ 中央寄り」で評価し、捜索効率を最大化する。
+ * （旧版は距離だけで選んでいたため、端の1ビルだけのマスへ無駄に移動していた）
+ */
 function nearestUncoveredSquare(
   catPos: Position,
   allKnown: Position[],
   claimedSquares: Position[],
 ): Position | null {
-  const squares = catSquaresWithUnknown(allKnown)
-    .filter((sq) => !inList(sq, claimedSquares));
+  const center = 1.5; // 4x4マスの中心
+  const scoreSq = (sq: Position): number => {
+    const unknowns = unknownCountAtSquare(sq, allKnown);
+    const dist = catSqManhattan(catPos, sq);
+    const centrality = -(Math.abs(sq.row - center) + Math.abs(sq.col - center));
+    // 未捜索数を最重視、近さ、わずかに中央寄りを加点
+    return unknowns * 4 - dist + centrality * 0.3;
+  };
 
-  if (squares.length === 0) {
-    // All claimed — just find nearest uncovered regardless
-    const all = catSquaresWithUnknown(allKnown);
-    if (all.length === 0) return null;
-    return all.reduce((best, sq) =>
-      catSqManhattan(catPos, sq) < catSqManhattan(best, sq) ? sq : best,
-    );
-  }
+  const avail = catSquaresWithUnknown(allKnown).filter((sq) => !inList(sq, claimedSquares));
+  const pool = avail.length > 0 ? avail : catSquaresWithUnknown(allKnown);
+  if (pool.length === 0) return null;
 
-  return squares.reduce((best, sq) =>
-    catSqManhattan(catPos, sq) < catSqManhattan(best, sq) ? sq : best,
-  );
+  return pool.reduce((best, sq) => (scoreSq(sq) > scoreSq(best) ? sq : best));
 }
 
 // ─── Phase B: Pursuit with roles ─────────────────────────────────────────────
@@ -525,7 +533,18 @@ function scoreCpuMouseMove(
 ): number {
   // Future freedom after moving here (trails will include current pos)
   const futureTrails = [...trailMarkers, { position: currentPos, turn: 0, discovered: false }];
-  const freedom = getValidMouseMoves(pos, futureTrails).length;
+  const nextMoves = getValidMouseMoves(pos, futureTrails);
+  const freedom = nextMoves.length;
+
+  // 2手先の逃げ道：移動後さらに移動した先で、いくつ動けるか（最大）。
+  // これにより「次は動けるが、その次で袋小路」という自滅を避ける。
+  const trailsAfter = [...futureTrails, { position: pos, turn: 0, discovered: false }];
+  const onwardFreedom = nextMoves.length > 0
+    ? Math.max(...nextMoves.map((n) => getValidMouseMoves(n, trailsAfter).length))
+    : 0;
+
+  // 即・袋小路は致命的なので強く減点
+  const deadEndPenalty = freedom === 0 ? -20 : 0;
 
   // Distance from all cats (higher = safer)
   const catDist = minDistToCats(pos, catPositions);
@@ -537,7 +556,7 @@ function scoreCpuMouseMove(
   // Bonus for moving away from the nearest cat
   const fleeBonus = catDist - currentDist;
 
-  return freedom * 2 + catDist * 3 + fleeBonus + movingTowardCats;
+  return freedom * 2 + onwardFreedom * 1.2 + deadEndPenalty + catDist * 3 + fleeBonus + movingTowardCats;
 }
 
 export function getCpuMouseDecision(

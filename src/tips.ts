@@ -263,6 +263,164 @@ export const TIP_CATEGORIES: TipCategory[] = [
       },
     ],
   },
+
+  {
+    id: 'column',
+    icon: '📰',
+    name: { ja: 'ボードゲームコラム', en: 'Board Game Column' },
+    color: 'bg-rose-400',
+    description: { ja: '元ネタや、おうちで遊べる関連ゲームの話', en: 'Origins and real games you can play at home' },
+    articles: [
+      {
+        id: 'origin',
+        title: { ja: 'このゲームのルーツ「逃走系ボードゲーム」', en: 'Roots: hidden-movement chase games' },
+        summary: { ja: '追いかけっこゲームの魅力とは', en: 'Why asymmetric chases are fun' },
+        body: {
+          ja: [
+            '1人が逃げ、複数人が協力して追い詰める——この「非対称な追いかけっこ」は、ボードゲームの世界で長く愛されてきた人気ジャンルです。',
+            '逃げる側は1人だけ情報を隠し持ち、追う側はわずかな手がかりから居場所を推理する。この情報の非対称性が、何度遊んでも飽きない駆け引きを生みます。',
+            '本作「ニャンコ探偵とこそ泥ネズミ」も、この伝統的な面白さをスマホで手軽に味わえるようデザインしました。',
+          ],
+          en: [
+            'One player flees while others cooperate to corner them — this "asymmetric chase" is a beloved board-game genre.',
+            'The runner alone hides information; the chasers deduce the location from scant clues. That asymmetry creates endlessly replayable tension.',
+            'Detective Cats & The Cheese Thief brings this classic appeal to your phone in a quick, casual form.',
+          ],
+        },
+      },
+      {
+        id: 'real-boardgames',
+        title: { ja: 'おうちで遊べる！似たボードゲーム', en: 'Real board games like this one' },
+        summary: { ja: '実物の名作を紹介します', en: 'Physical classics we recommend' },
+        body: {
+          ja: [
+            'デジタルで気に入ったら、ぜひ実物のボードゲームも。テーブルを囲む臨場感は格別です。',
+            '「ねことねずみの大レース」は、ネズミがチーズを集めながらネコから逃げる、本作と同じテーマの名作。子どもから大人まで一緒に遊べます。',
+            '推理して追い詰める面白さが好きなら「クルード」や「犯人は踊る」もおすすめ。誰が・どこで・何をしたかを推理する定番です。',
+          ],
+          en: [
+            'If you enjoy the digital version, try the physical games — gathering around a table is special.',
+            '"Viva Topo!" (Cat & Mouse) has the mouse collect cheese while fleeing cats — the same theme as this game, fun for all ages.',
+            'If you like deduction, try "Cluedo" or "A Criminal Dance" — classics of figuring out who, where, and how.',
+          ],
+        },
+      },
+      {
+        id: 'strategic-games',
+        title: { ja: '戦略が光るボードゲーム名作選', en: 'Great strategic board games' },
+        summary: { ja: '読み合いが好きな人へおすすめ3作', en: 'Three picks for mind-game lovers' },
+        body: {
+          ja: [
+            '本作の「隠れて逃げる相手を推理して追い詰める」面白さが気に入ったなら、戦略性の高い名作もきっと楽しめます。',
+            '①「スコットランドヤード」：怪盗Xを探偵が追う隠れ移動ゲームの金字塔。本作と同じジャンルの元祖的存在です。',
+            '②「ガイスター」：相手のコマが良いオバケか悪いオバケか分からないまま戦う、2人用の心理戦の傑作。',
+            '③「ブラフ」：全員のサイコロの出目を推理し合う、観察力と度胸が試されるダイスゲーム。',
+          ],
+          en: [
+            'If you enjoyed deducing and cornering a hidden runner here, you will likely love these strategic classics.',
+            '1) "Scotland Yard": the gold standard of hidden-movement games, where detectives chase the thief Mr. X — the origin of this genre.',
+            '2) "Ghosts (Geister)": a 2-player mind game where you fight without knowing if your opponent\'s pieces are good or evil ghosts.',
+            '3) "Bluff": a dice game of guessing everyone\'s rolls, testing observation and nerve.',
+          ],
+        },
+      },
+      {
+        id: 'family-play',
+        title: { ja: '家族で遊ぶときのコツ', en: 'Tips for family play' },
+        summary: { ja: '年齢差があっても盛り上がる遊び方', en: 'Fun even with mixed ages' },
+        body: {
+          ja: [
+            '実力差があるときは、大人がネズミ（逃げる側）を持つと白熱します。3匹のネコを子どもたちで分担すれば自然とチーム戦に。',
+            '逆に大人がネコ役で手加減し、子どものネズミが逃げ切る達成感を演出するのも一案です。',
+            '勝敗のあとは「どこで捕まりそうだった？」と振り返ると、次の戦略を考える力が育ちます。',
+          ],
+          en: [
+            'When skills differ, let an adult play the mouse for a thrill. Kids can split the three cats for a natural team game.',
+            'Or let an adult play the cats and ease up, giving a child playing the mouse the joy of escaping.',
+            'After each game, ask "where were you almost caught?" — reflecting builds strategic thinking.',
+          ],
+        },
+      },
+    ],
+  },
+
+  {
+    id: 'faq',
+    icon: '❓',
+    name: { ja: 'よくある質問', en: 'FAQ' },
+    color: 'bg-teal-400',
+    description: { ja: '操作やルールの疑問をまとめて解決', en: 'Common questions about rules and controls' },
+    articles: [
+      {
+        id: 'faq-trail-search',
+        title: { ja: 'Q. 痕跡のあるビルは捜索できる？', en: 'Q. Can cats search a building with a trail?' },
+        summary: { ja: 'ネコ視点とネズミ視点の違い', en: 'Cat view vs mouse view' },
+        body: {
+          ja: [
+            'はい、ネコは痕跡のあるビルも捜索できます。ネコ側には痕跡が見えないため、すべての隣接ビルが捜索対象です。',
+            '一方、ネズミは痕跡を残したビルには二度と入れません。これは移動制限であり、捜索ルールとは別物です。',
+            '同じビルでも、ネコには「いるかもしれない場所」、ネズミには「もう行けない場所」と意味が異なります。',
+          ],
+          en: [
+            'Yes. Cats can search buildings with trails, because the cat player cannot see trails — every adjacent building is a valid target.',
+            'The mouse, however, can never re-enter a building with its trail. That is a movement limit, separate from the search rules.',
+            'The same building means different things: "maybe there" for cats, "can\'t go back" for the mouse.',
+          ],
+        },
+      },
+      {
+        id: 'faq-turn-count',
+        title: { ja: 'Q. 「11ターン」はどう数える？', en: 'Q. How are the 11 turns counted?' },
+        summary: { ja: 'ターンの区切りをはっきりさせる', en: 'Where each turn begins and ends' },
+        body: {
+          ja: [
+            '1ターンは「ネコ3匹の行動 → ネズミの移動」を1セットとして数えます。これを11回繰り返して終了です。',
+            '最後の11ターン目はネコの捜索で締めくくられます。ここで見つからなければネズミの逃げ切り勝ちです。',
+            '画面上部のターン表示とドットで、今が何ターン目か確認できます。',
+          ],
+          en: [
+            'One turn is a set of "all 3 cats act, then the mouse moves." The game ends after 11 such sets.',
+            'The 11th turn closes with the cats searching. If they fail, the mouse escapes and wins.',
+            'The turn counter and dots at the top show which turn you are on.',
+          ],
+        },
+      },
+      {
+        id: 'faq-operation',
+        title: { ja: 'Q. ネコの操作方法がわからない', en: 'Q. How do I control the cats?' },
+        summary: { ja: 'タップだけのかんたん操作', en: 'Simple tap-only controls' },
+        body: {
+          ja: [
+            'まず動かしたいネコをタップして選びます。選択中は黄色い枠、未行動のネコは緑の枠で示されます。',
+            '選んだら、移動先の通路マスをタップで移動、隣接ビルをタップで捜索。1匹につき移動か捜索を1回行います。',
+            '3匹すべてが行動するとネズミの番へ。動かす順番は自由なので、捜索結果を見て次を決められます。',
+          ],
+          en: [
+            'First tap the cat you want to move. The selected cat shows a yellow ring; cats that have not acted show a green ring.',
+            'Then tap a path square to move, or an adjacent building to search. Each cat moves or searches once.',
+            'Once all three act, it is the mouse\'s turn. The order is free, so you can decide based on search results.',
+          ],
+        },
+      },
+      {
+        id: 'faq-data',
+        title: { ja: 'Q. 個人情報やデータは保存される？', en: 'Q. Is any personal data saved?' },
+        summary: { ja: '安心して遊べる設計です', en: 'Built to be safe and private' },
+        body: {
+          ja: [
+            '本ゲームは進行状態を端末内だけで処理し、氏名やメールアドレスなどの個人情報は一切収集しません。',
+            'ゲーム記録もサーバーに送信されず、ブラウザを閉じると進行中のゲームはリセットされます。登録も不要です。',
+            '広告やアフィリエイトの詳細はプライバシーポリシーに記載しています。',
+          ],
+          en: [
+            'The game processes state only on your device and collects no personal information such as name or email.',
+            'No game records are sent to a server, and closing the browser resets the current game. No account is needed.',
+            'Details on ads and affiliate links are in the Privacy Policy.',
+          ],
+        },
+      },
+    ],
+  },
 ];
 
 export function findCategory(id: string): TipCategory | undefined {

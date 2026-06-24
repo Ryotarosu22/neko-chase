@@ -15,6 +15,7 @@ import { Lang, LangContext, STRINGS, StringKey } from './i18n';
 import ModeSelect from './components/ModeSelect';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TipsScreen from './components/TipsScreen';
+import Tutorial from './components/Tutorial';
 import HandoffScreen from './components/HandoffScreen';
 import Board from './components/Board';
 import GameHeader from './components/GameHeader';
@@ -73,6 +74,14 @@ export default function App() {
   const [game, setGame] = useState<GameState | null>(null);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showTips, setShowTips] = useState(false);
+  // 初回訪問時のみチュートリアルを自動表示
+  const [showTutorial, setShowTutorial] = useState(() => {
+    try { return localStorage.getItem('neko-tutorial-seen') !== '1'; } catch { return false; }
+  });
+  const closeTutorial = () => {
+    setShowTutorial(false);
+    try { localStorage.setItem('neko-tutorial-seen', '1'); } catch { /* ignore */ }
+  };
   const [pendingMouseMove, setPendingMouseMove] = useState<Position | null>(null);
   const cpuTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -365,7 +374,17 @@ export default function App() {
   if (!game) {
     if (showPrivacy) return <PrivacyPolicy onBack={() => setShowPrivacy(false)} />;
     if (showTips) return <TipsScreen onBack={() => setShowTips(false)} />;
-    return <ModeSelect onStart={handleStart} onPrivacy={() => setShowPrivacy(true)} onTips={() => setShowTips(true)} />;
+    return (
+      <>
+        <ModeSelect
+          onStart={handleStart}
+          onPrivacy={() => setShowPrivacy(true)}
+          onTips={() => setShowTips(true)}
+          onTutorial={() => setShowTutorial(true)}
+        />
+        {showTutorial && <Tutorial onClose={closeTutorial} />}
+      </>
+    );
   }
 
   // Game over: board on top (full route visible), result panel below

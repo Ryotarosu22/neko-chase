@@ -9,9 +9,10 @@ interface Props {
   onStart: (mode: GameMode, names?: { cat?: string; mouse?: string }, difficulty?: Difficulty) => void;
   onPrivacy: () => void;
   onTips: () => void;
+  onTutorial: () => void;
 }
 
-export default function ModeSelect({ onStart, onPrivacy, onTips }: Props) {
+export default function ModeSelect({ onStart, onPrivacy, onTips, onTutorial }: Props) {
   const { t } = useLang();
   const [showNames, setShowNames] = useState(false);
   const [catName, setCatName] = useState('');
@@ -148,12 +149,20 @@ export default function ModeSelect({ onStart, onPrivacy, onTips }: Props) {
         <p>{t('howToBody')}</p>
       </div>
 
-      <button
-        onClick={onTips}
-        className="w-full max-w-xs py-3 rounded-2xl bg-white border-2 border-amber-300 text-amber-700 font-bold shadow-sm active:scale-95 transition-transform"
-      >
-        {t('readTips')}
-      </button>
+      <div className="w-full max-w-xs flex flex-col gap-2">
+        <button
+          onClick={onTutorial}
+          className="w-full py-3 rounded-2xl bg-white border-2 border-amber-300 text-amber-700 font-bold shadow-sm active:scale-95 transition-transform"
+        >
+          {t('tutorialBtn')}
+        </button>
+        <button
+          onClick={onTips}
+          className="w-full py-3 rounded-2xl bg-white border-2 border-amber-300 text-amber-700 font-bold shadow-sm active:scale-95 transition-transform"
+        >
+          {t('readTips')}
+        </button>
+      </div>
 
       <ShareButtons text={t('shareText')} />
 

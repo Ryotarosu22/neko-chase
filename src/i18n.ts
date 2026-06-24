@@ -105,6 +105,13 @@ export const STRINGS = {
   routeHint: { ja: '↑ ネズミの移動経路', en: "↑ The mouse's route" },
   playAgain: { ja: 'もう一度！', en: 'Play again!' },
 
+  // チュートリアル
+  tutorialBtn: { ja: '❔ 遊び方を見る', en: '❔ How to play' },
+  tutNext: { ja: '次へ →', en: 'Next →' },
+  tutBack: { ja: '← 戻る', en: '← Back' },
+  tutSkip: { ja: 'スキップ', en: 'Skip' },
+  tutStart: { ja: 'はじめる！', en: 'Got it!' },
+
   // Tips
   tipsTitle: { ja: '攻略のコツ', en: 'Strategy Tips' },
   tipsIntro: { ja: 'カテゴリを選んで、ネコ・ネズミそれぞれの攻略法を読んでみましょう。', en: 'Pick a category to read tips for both cats and mouse.' },

@@ -51,6 +51,27 @@ export const PRODUCTS: AffiliateProduct[] = [
     emoji: '🕵️',
     searchKeyword: 'クルード Cluedo ボードゲーム',
   },
+  {
+    // スコットランドヤード — 隠れて逃げる怪盗を追う、本作と同ジャンルの名作
+    asin: 'B0002YM124',
+    title: 'スコットランドヤード',
+    emoji: '🕵️‍♂️',
+    searchKeyword: 'スコットランドヤード ボードゲーム',
+  },
+  {
+    // ガイスター — 2人用の心理戦・ブラフ戦略ゲーム
+    asin: 'B0078WZSK0',
+    title: 'ガイスター',
+    emoji: '👻',
+    searchKeyword: 'ガイスター ボードゲーム',
+  },
+  {
+    // ブラフ — 観察と度胸のダイス戦略ゲーム
+    asin: 'B071HL2N1Y',
+    title: 'ブラフ',
+    emoji: '🎲',
+    searchKeyword: 'ブラフ ボードゲーム アークライト',
+  },
 ];
 
 /** 商品のアフィリエイトURLを生成（ASIN優先、なければ検索URLにタグ付与） */

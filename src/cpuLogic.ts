@@ -225,6 +225,13 @@ function computePursuitTargetsAdvanced(
   const candidates = reachablePositions(latest.position, latest.turn, round, trailPositions);
   if (candidates.length === 0) return [latest.position, latest.position, latest.position];
 
+  // 候補が3以下なら、各セルを確実に1匹ずつ担当（取りこぼしゼロ）
+  if (candidates.length <= 3) {
+    const t = [...candidates];
+    while (t.length < 3) t.push(candidates[0]);
+    return t.slice(0, 3);
+  }
+
   // 進行方向の重み付け（方向が分かる場合）＋ 自由度の低さ（追い込みやすさ）でスコア化
   let dr = 0, dc = 0;
   if (discovered.length >= 2) {
@@ -235,19 +242,30 @@ function computePursuitTargetsAdvanced(
   const scored = candidates.map((pos) => {
     const freedom = mouseFreedom(pos, trailPositions);
     const dirAlign = (pos.row - latest.position.row) * dr + (pos.col - latest.position.col) * dc;
-    // 自由度が低いほど高評価、進行方向と一致するほど高評価
     return { pos, score: -freedom * 2 + dirAlign };
-  });
-  scored.sort((a, b) => b.score - a.score);
+  }).sort((a, b) => b.score - a.score);
 
-  // 上位3つの異なる候補を返す（足りなければ最良で埋める）
-  const top: Position[] = [];
-  for (const s of scored) {
-    if (!top.some((p) => posEq(p, s.pos))) top.push(s.pos);
-    if (top.length === 3) break;
+  // スコアを0〜1に正規化（分散カバーと釣り合わせるため）
+  const maxS = scored[0].score, minS = scored[scored.length - 1].score;
+  const norm = (s: number) => (maxS === minS ? 1 : (s - minS) / (maxS - minS));
+
+  // 貪欲な「最遠点 + 高スコア」選択：高確率セルを押さえつつ、
+  // 3匹が候補領域の広がりをカバーして横からの逃走を許さない。
+  const chosen: Position[] = [scored[0].pos];
+  while (chosen.length < 3) {
+    let best: Position | null = null;
+    let bestVal = -Infinity;
+    for (const s of scored) {
+      if (chosen.some((p) => posEq(p, s.pos))) continue;
+      const minDist = Math.min(...chosen.map((p) => manhattan(p, s.pos)));
+      const val = norm(s.score) + minDist * 0.35; // 確率 vs 分散のバランス
+      if (val > bestVal) { bestVal = val; best = s.pos; }
+    }
+    if (!best) break;
+    chosen.push(best);
   }
-  while (top.length < 3) top.push(scored[0].pos);
-  return top;
+  while (chosen.length < 3) chosen.push(scored[0].pos);
+  return chosen;
 }
 
 /** 初級用：戦略を使わず、半ランダムに捜索・移動する弱いCPU */

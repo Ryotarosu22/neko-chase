@@ -1,0 +1,25 @@
+{
+  "name": "ニャンコ探偵とこそ泥ネズミ",
+  "short_name": "ニャンコ探偵",
+  "description": "チーズを盗んだネズミを3匹のネコで追いつめる無料の推理ボードゲーム",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fef3c7",
+  "theme_color": "#fef3c7",
+  "icons": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

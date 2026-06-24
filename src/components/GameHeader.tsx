@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Screen } from '../types';
 import { MAX_ROUNDS } from '../gameLogic';
+import { isMuted, toggleMuted } from '../sound';
 
 interface Props {
   round: number;
@@ -11,18 +12,28 @@ interface Props {
 
 export default function GameHeader({ round, screen, currentCatIndex, onQuit }: Props) {
   const [confirming, setConfirming] = useState(false);
+  const [muted, setMuted] = useState(isMuted());
   const isCatPhase = screen === 'cat_acting' || screen === 'search_result';
   const isMousePhase = screen === 'mouse_moving' || screen === 'mouse_setup';
 
   return (
     <>
       <div className="flex items-center justify-between px-4 py-2 bg-white shadow-sm">
-        <button
-          onClick={() => setConfirming(true)}
-          className="text-xs text-gray-400 font-bold px-2 py-1 rounded-lg active:bg-gray-100"
-        >
-          ✕ やめる
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setConfirming(true)}
+            className="text-xs text-gray-400 font-bold px-2 py-1 rounded-lg active:bg-gray-100"
+          >
+            ✕ やめる
+          </button>
+          <button
+            onClick={() => setMuted(toggleMuted())}
+            className="text-sm px-1.5 py-1 rounded-lg active:bg-gray-100"
+            aria-label={muted ? 'サウンドをオン' : 'サウンドをオフ'}
+          >
+            {muted ? '🔇' : '🔊'}
+          </button>
+        </div>
 
         {/* Round progress dots */}
         <div className="flex gap-1">

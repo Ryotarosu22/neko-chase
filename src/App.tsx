@@ -6,6 +6,10 @@ import {
   isMouseTrapped, posEq, inList,
 } from './gameLogic';
 import { getCpuCatDecisions, getCpuMouseDecision, getCpuMouseStartPosition } from './cpuLogic';
+import {
+  playCatMove, playMouseMove, playEmpty, playCheese,
+  playCaught, playEscape, playTrapped,
+} from './sound';
 
 import ModeSelect from './components/ModeSelect';
 import PrivacyPolicy from './components/PrivacyPolicy';
@@ -107,6 +111,7 @@ export default function App() {
       const decision = decisions[prev.currentCatIndex];
 
       if (decision.action === 'move' && decision.targetPosition) {
+        playCatMove();
         const newCats = [...prev.catPositions];
         newCats[prev.currentCatIndex] = decision.targetPosition;
         const newRemaining = prev.remainingCats.filter((i) => i !== prev.currentCatIndex);
@@ -150,6 +155,7 @@ export default function App() {
         if (!dest) {
           return { ...prev, screen: 'game_over', winner: 'cat', winReason: 'trapped' };
         }
+        playMouseMove();
         const newTrail = [...prev.trailMarkers, { position: prev.mousePosition, turn: prev.trailMarkers.length + 1, discovered: false }];
         return { ...prev, mousePosition: dest, trailMarkers: newTrail, screen: 'cat_acting', selectedCat: null, catSubAction: 'idle' };
       }
@@ -164,6 +170,13 @@ export default function App() {
     }
     return () => { if (cpuTimer.current) clearTimeout(cpuTimer.current); };
   }, [game?.screen, game?.round, game?.mode, runCpuMouseStep]);
+
+  // ── ゲーム終了時の効果音（逃げ切り・袋小路。捕獲は捜索時に再生済み）──
+  useEffect(() => {
+    if (game?.screen !== 'game_over') return;
+    if (game.winReason === 'escaped') playEscape();
+    else if (game.winReason === 'trapped') playTrapped();
+  }, [game?.screen, game?.winReason]);
 
   // ── Auto-clear search result ──
   // When human cats find the mouse: wait for tap (handled by handleDismissSearchResult).
@@ -288,6 +301,7 @@ export default function App() {
 
     // If a cat is selected and clicking a valid move destination → move
     if (game.selectedCat !== null && inList(pos, validCatMoves)) {
+      playCatMove();
       const newCats = [...game.catPositions];
       newCats[game.selectedCat] = pos;
       const newRemaining = game.remainingCats.filter((i) => i !== game.selectedCat);
@@ -316,6 +330,7 @@ export default function App() {
     }
 
     if (game.screen === 'mouse_moving' && game.mousePosition) {
+      playMouseMove();
       const newTrail = [...game.trailMarkers, { position: game.mousePosition, turn: game.trailMarkers.length + 1, discovered: false }];
       const nextScreen = isCpuCats(game.mode) ? 'cat_acting' : 'handoff_to_cat';
       setGame({ ...game, mousePosition: pendingMouseMove, trailMarkers: newTrail, screen: nextScreen, selectedCat: null, catSubAction: 'idle' });
@@ -443,6 +458,11 @@ function executeCatSearch(game: GameState, building: Position): GameState {
   const newKnownEmpty = !found && !foundMarker
     ? [...game.knownEmpty, building]
     : game.knownEmpty;
+
+  // 効果音：捕獲 > チーズ発見 > 空振り
+  if (found) playCaught();
+  else if (foundMarker) playCheese();
+  else playEmpty();
 
   const actingCat = game.selectedCat ?? game.currentCatIndex;
   const newRemaining = game.remainingCats.filter((i) => i !== actingCat);

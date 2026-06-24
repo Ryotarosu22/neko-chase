@@ -1,18 +1,61 @@
 import { useState } from 'react';
-import { GameMode } from '../types';
+import { GameMode, Difficulty } from '../types';
 import AffiliateBanner from './AffiliateBanner';
 import ShareButtons from './ShareButtons';
 
 interface Props {
-  onStart: (mode: GameMode, names?: { cat?: string; mouse?: string }) => void;
+  onStart: (mode: GameMode, names?: { cat?: string; mouse?: string }, difficulty?: Difficulty) => void;
   onPrivacy: () => void;
   onTips: () => void;
 }
+
+const DIFFICULTIES: { id: Difficulty; label: string; emoji: string; desc: string; color: string }[] = [
+  { id: 'beginner', label: '初級', emoji: '🌱', desc: 'のんびり・戦略をあまり使わない', color: 'bg-green-400' },
+  { id: 'intermediate', label: '中級', emoji: '🔥', desc: '痕跡を読んで連携してくる', color: 'bg-orange-400' },
+  { id: 'advanced', label: '上級', emoji: '👑', desc: '先読み・包囲・確率推理で本気', color: 'bg-purple-500' },
+];
 
 export default function ModeSelect({ onStart, onPrivacy, onTips }: Props) {
   const [showNames, setShowNames] = useState(false);
   const [catName, setCatName] = useState('');
   const [mouseName, setMouseName] = useState('');
+  const [cpuMode, setCpuMode] = useState<GameMode | null>(null);
+
+  // ── CPU対戦の難易度選択画面 ──
+  if (cpuMode) {
+    const isMouse = cpuMode === 'cpu_mouse';
+    return (
+      <div className="flex flex-col items-center justify-center min-h-full gap-6 px-6 py-8 bg-amber-50 overflow-y-auto">
+        <div className="text-center">
+          <div className="text-5xl mb-2">{isMouse ? '🐭' : '🐱'}</div>
+          <h1 className="text-xl font-bold text-amber-900">難易度をえらぶ</h1>
+          <p className="text-xs text-amber-700 mt-1">
+            {isMouse ? 'あなたはネコ役。CPUネズミの賢さを選択' : 'あなたはネズミ役。CPUネコの賢さを選択'}
+          </p>
+        </div>
+
+        <div className="w-full max-w-xs flex flex-col gap-3">
+          {DIFFICULTIES.map((d) => (
+            <button
+              key={d.id}
+              onClick={() => onStart(cpuMode, undefined, d.id)}
+              className={`w-full ${d.color} text-white rounded-2xl px-4 py-3 shadow-md active:scale-95 transition-transform text-left flex items-center gap-3`}
+            >
+              <span className="text-3xl shrink-0">{d.emoji}</span>
+              <span className="flex-1">
+                <span className="block font-bold text-lg">{d.label}</span>
+                <span className="block text-xs opacity-90">{d.desc}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <button onClick={() => setCpuMode(null)} className="text-xs text-amber-500 underline">
+          ← 戻る
+        </button>
+      </div>
+    );
+  }
 
   // ── 2人対戦の名前入力画面 ──
   if (showNames) {
@@ -87,13 +130,13 @@ export default function ModeSelect({ onStart, onPrivacy, onTips }: Props) {
           🤝 同じ端末で2人対戦
         </button>
         <button
-          onClick={() => onStart('cpu_cat')}
+          onClick={() => setCpuMode('cpu_cat')}
           className="w-full py-4 rounded-2xl bg-orange-400 text-white font-bold text-lg shadow-md active:scale-95 transition-transform"
         >
           🐱 CPU対戦（自分がネズミ役）
         </button>
         <button
-          onClick={() => onStart('cpu_mouse')}
+          onClick={() => setCpuMode('cpu_mouse')}
           className="w-full py-4 rounded-2xl bg-blue-400 text-white font-bold text-lg shadow-md active:scale-95 transition-transform"
         >
           🐭 CPU対戦（自分がネコ役）

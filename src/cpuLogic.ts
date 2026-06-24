@@ -1,8 +1,10 @@
-import { GameState, Position, TrailMarker } from './types';
+import { GameState, Position, TrailMarker, Difficulty } from './types';
 import {
   getValidCatMoves, getValidMouseMoves, getSearchableBuildings,
   getBuildingsAtCatSquare, inList, posEq, BUILDING_SIZE, CAT_SIZE, MAX_ROUNDS,
 } from './gameLogic';
+
+function pickRandom<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
 
@@ -201,6 +203,67 @@ function computePursuitTargets(
   return [chaseTarget, interceptTarget, blockerTarget];
 }
 
+/**
+ * 上級用：方向予測ではなく「ネズミが今いる可能性のある建物」の確率マップから
+ * 最も可能性が高い（＝自由度が低く隅に追い込まれた）候補を上位3つ選ぶ。
+ * 3匹がそれぞれ別の高確率候補を担当することで、捕獲率を最大化する。
+ */
+function computePursuitTargetsAdvanced(
+  discovered: TrailMarker[],
+  trailPositions: Position[],
+  round: number,
+): Position[] {
+  const latest = discovered[0];
+  const candidates = reachablePositions(latest.position, latest.turn, round, trailPositions);
+  if (candidates.length === 0) return [latest.position, latest.position, latest.position];
+
+  // 進行方向の重み付け（方向が分かる場合）＋ 自由度の低さ（追い込みやすさ）でスコア化
+  let dr = 0, dc = 0;
+  if (discovered.length >= 2) {
+    dr = Math.sign(latest.position.row - discovered[1].position.row);
+    dc = Math.sign(latest.position.col - discovered[1].position.col);
+  }
+
+  const scored = candidates.map((pos) => {
+    const freedom = mouseFreedom(pos, trailPositions);
+    const dirAlign = (pos.row - latest.position.row) * dr + (pos.col - latest.position.col) * dc;
+    // 自由度が低いほど高評価、進行方向と一致するほど高評価
+    return { pos, score: -freedom * 2 + dirAlign };
+  });
+  scored.sort((a, b) => b.score - a.score);
+
+  // 上位3つの異なる候補を返す（足りなければ最良で埋める）
+  const top: Position[] = [];
+  for (const s of scored) {
+    if (!top.some((p) => posEq(p, s.pos))) top.push(s.pos);
+    if (top.length === 3) break;
+  }
+  while (top.length < 3) top.push(scored[0].pos);
+  return top;
+}
+
+/** 初級用：戦略を使わず、半ランダムに捜索・移動する弱いCPU */
+function beginnerCatDecision(state: GameState, catIndex: number): CpuCatDecision {
+  const { catPositions, trailMarkers, knownEmpty, round } = state;
+  const catPos = catPositions[catIndex];
+  const searchable = getSearchableBuildings(catPos);
+  const allKnown = [...trailMarkers.map((m) => m.position), ...knownEmpty];
+  const unknown = searchable.filter((b) => !inList(b, allKnown));
+
+  // 最終ターンは必ず捜索
+  if (round >= MAX_ROUNDS) {
+    return { action: 'search', searchBuilding: unknown.length ? pickRandom(unknown) : pickRandom(searchable) };
+  }
+
+  // 痕跡を追わず、70%で未捜索ビルをランダム捜索、30%でランダム移動
+  if (unknown.length > 0 && Math.random() < 0.7) {
+    return { action: 'search', searchBuilding: pickRandom(unknown) };
+  }
+  const moves = getValidCatMoves(catIndex, catPositions);
+  if (moves.length > 0) return { action: 'move', targetPosition: pickRandom(moves) };
+  return { action: 'search', searchBuilding: unknown.length ? pickRandom(unknown) : pickRandom(searchable) };
+}
+
 /** Greedy assignment: each cat gets the closest distinct pursuit target */
 function assignTargets(catPositions: Position[], targets: Position[]): Position[] {
   const remaining = [...targets];
@@ -320,16 +383,22 @@ export function getCpuCatDecision(
 
 // ─── Coordinate all three cats ────────────────────────────────────────────────
 
-export function getCpuCatDecisions(state: GameState): CpuCatDecision[] {
+export function getCpuCatDecisions(state: GameState, difficulty: Difficulty = 'intermediate'): CpuCatDecision[] {
+  // 初級：戦略なしの弱いCPU
+  if (difficulty === 'beginner') {
+    return state.catPositions.map((_, i) => beginnerCatDecision(state, i));
+  }
+
   const discovered = discoveredSorted(state.trailMarkers);
   const trailPositions = state.trailMarkers.map((m) => m.position);
 
   // Phase B: pre-compute one pursuit target per cat
   let pursuitTargets: (Position | null)[] = [null, null, null];
   if (discovered.length > 0) {
-    const targets = computePursuitTargets(
-      state.catPositions, discovered, trailPositions, state.round,
-    );
+    // 上級は確率マップで高確率候補に全力収束、中級は方向予測の役割分担
+    const targets = difficulty === 'advanced'
+      ? computePursuitTargetsAdvanced(discovered, trailPositions, state.round)
+      : computePursuitTargets(state.catPositions, discovered, trailPositions, state.round);
     pursuitTargets = assignTargets(state.catPositions, targets);
   }
 
@@ -375,13 +444,22 @@ function minDistToCats(pos: Position, catPositions: Position[]): number {
  * Choose the best starting position for the CPU mouse given cat placements.
  * Strategy: maximise distance from all cats + prefer positions with high future freedom.
  */
-export function getCpuMouseStartPosition(catPositions: Position[]): Position {
+export function getCpuMouseStartPosition(
+  catPositions: Position[],
+  difficulty: Difficulty = 'intermediate',
+): Position {
   const all25: Position[] = [];
   for (let r = 0; r < BUILDING_SIZE; r++)
     for (let c = 0; c < BUILDING_SIZE; c++)
       all25.push({ row: r, col: c });
 
-  // Score each building: distance from cats (weighted heavily) + future freedom
+  // 初級：そこそこ安全（猫から2マス以上）な場所からランダムに選ぶ＝予測しやすく弱い
+  if (difficulty === 'beginner') {
+    const okay = all25.filter((p) => minDistToCats(p, catPositions) >= 2);
+    return okay.length ? pickRandom(okay) : pickRandom(all25);
+  }
+
+  // 中級・上級：猫からの距離（重視）＋将来の自由度が最大の建物
   return all25.reduce((best, pos) => {
     const distScore = minDistToCats(pos, catPositions);
     const freedomScore = mouseFreedom(pos, []);
@@ -393,6 +471,46 @@ export function getCpuMouseStartPosition(catPositions: Position[]): Position {
 
     return score > bestScore ? pos : best;
   });
+}
+
+/** ネコ1匹を1歩ネズミへ近づけた位置（先読み用の簡易シミュレーション） */
+function simCatStepToward(catPositions: Position[], catIndex: number, target: Position): Position {
+  const moves = getValidCatMoves(catIndex, catPositions);
+  if (moves.length === 0) return catPositions[catIndex];
+  return moves.reduce((best, m) =>
+    catSqDistTo(m, target) < catSqDistTo(best, target) ? m : best,
+  catPositions[catIndex]);
+}
+
+/**
+ * 上級用：1手先読み。各ネコが自分へ1歩寄ってくると仮定し、
+ * その後でも安全（自由度が高く猫から遠い）な移動先を選ぶ。
+ * さらに直前と同じ方向への移動を軽く減点し、読まれにくくする。
+ */
+function scoreCpuMouseMoveAdvanced(
+  pos: Position,
+  currentPos: Position,
+  catPositions: Position[],
+  trailMarkers: TrailMarker[],
+  prevPos: Position | null,
+): number {
+  let score = scoreCpuMouseMove(pos, currentPos, catPositions, trailMarkers);
+
+  // 1手先読み：全ネコが pos に1歩寄った後の最短距離（遠いほど安全）
+  const movedCats = catPositions.map((_, i) => simCatStepToward(catPositions, i, pos));
+  const nextDist = minDistToCats(pos, movedCats);
+  score += nextDist * 2;
+
+  // 直進ペナルティ：前回と同じ方向に進むと読まれやすい
+  if (prevPos) {
+    const lastDr = Math.sign(currentPos.row - prevPos.row);
+    const lastDc = Math.sign(currentPos.col - prevPos.col);
+    const dr = Math.sign(pos.row - currentPos.row);
+    const dc = Math.sign(pos.col - currentPos.col);
+    if (dr === lastDr && dc === lastDc && (dr !== 0 || dc !== 0)) score -= 1.5;
+  }
+
+  return score;
 }
 
 /**
@@ -426,15 +544,33 @@ export function getCpuMouseDecision(
   mousePos: Position,
   trailMarkers: TrailMarker[],
   catPositions: Position[] = [],
+  difficulty: Difficulty = 'intermediate',
 ): Position | null {
   const valid = getValidMouseMoves(mousePos, trailMarkers);
   if (valid.length === 0) return null;
+
+  // 初級：袋小路だけ避けてほぼランダム移動（読まれやすく弱い）
+  if (difficulty === 'beginner') {
+    const futureTrails = [...trailMarkers, { position: mousePos, turn: 0, discovered: false }];
+    const notDeadEnd = valid.filter((p) => getValidMouseMoves(p, futureTrails).length > 0);
+    return pickRandom(notDeadEnd.length ? notDeadEnd : valid);
+  }
 
   if (catPositions.length === 0) {
     // Fallback: maximise future freedom only
     const futureTrails = [...trailMarkers, { position: mousePos, turn: 0, discovered: false }];
     return valid.reduce((best, pos) =>
       getValidMouseMoves(pos, futureTrails).length > getValidMouseMoves(best, futureTrails).length
+        ? pos : best,
+    );
+  }
+
+  // 上級：1手先読み＋直進回避。中級：その場の評価のみ。
+  if (difficulty === 'advanced') {
+    const prevPos = trailMarkers.length > 0 ? trailMarkers[trailMarkers.length - 1].position : null;
+    return valid.reduce((best, pos) =>
+      scoreCpuMouseMoveAdvanced(pos, mousePos, catPositions, trailMarkers, prevPos) >
+      scoreCpuMouseMoveAdvanced(best, mousePos, catPositions, trailMarkers, prevPos)
         ? pos : best,
     );
   }

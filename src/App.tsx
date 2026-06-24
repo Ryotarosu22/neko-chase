@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { GameState, GameMode, Position } from './types';
+import { GameState, GameMode, Position, Difficulty } from './types';
 import {
   NUM_CATS, MAX_ROUNDS, CAT_SIZE,
   getValidMouseMoves, getValidCatMoves, getSearchableBuildings,
@@ -32,9 +32,10 @@ function randomCatPositions(): Position[] {
   return all.slice(0, NUM_CATS);
 }
 
-function createGame(mode: GameMode, names?: { cat?: string; mouse?: string }): GameState {
+function createGame(mode: GameMode, names?: { cat?: string; mouse?: string }, difficulty: Difficulty = 'intermediate'): GameState {
   return {
     mode,
+    difficulty,
     catName: names?.cat?.trim() || 'ニャンコ',
     mouseName: names?.mouse?.trim() || 'マウス',
     screen: mode === 'local' || mode === 'cpu_mouse' ? 'handoff_to_cat' : 'handoff_to_mouse',
@@ -109,7 +110,7 @@ export default function App() {
   const runCpuCatStep = useCallback(() => {
     setGame((prev) => {
       if (!prev || !isCpuCats(prev.mode) || prev.screen !== 'cat_acting') return prev;
-      const decisions = getCpuCatDecisions(prev);
+      const decisions = getCpuCatDecisions(prev, prev.difficulty);
       const decision = decisions[prev.currentCatIndex];
 
       if (decision.action === 'move' && decision.targetPosition) {
@@ -148,12 +149,12 @@ export default function App() {
       if (!prev || !isCpuMouse(prev.mode)) return prev;
 
       if (prev.screen === 'mouse_setup') {
-        const startPos = getCpuMouseStartPosition(prev.catPositions);
+        const startPos = getCpuMouseStartPosition(prev.catPositions, prev.difficulty);
         return { ...prev, mousePosition: startPos, screen: 'cat_acting', selectedCat: null, catSubAction: 'idle' };
       }
 
       if (prev.screen === 'mouse_moving' && prev.mousePosition) {
-        const dest = getCpuMouseDecision(prev.mousePosition, prev.trailMarkers, prev.catPositions);
+        const dest = getCpuMouseDecision(prev.mousePosition, prev.trailMarkers, prev.catPositions, prev.difficulty);
         if (!dest) {
           return { ...prev, screen: 'game_over', winner: 'cat', winReason: 'trapped' };
         }
@@ -230,8 +231,8 @@ export default function App() {
   }, [game?.screen, game?.round]);
 
   // ── Handlers ──
-  function handleStart(mode: GameMode, names?: { cat?: string; mouse?: string }) {
-    setGame(createGame(mode, names));
+  function handleStart(mode: GameMode, names?: { cat?: string; mouse?: string }, difficulty?: Difficulty) {
+    setGame(createGame(mode, names, difficulty));
     setPendingMouseMove(null);
   }
 

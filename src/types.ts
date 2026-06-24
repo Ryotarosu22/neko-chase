@@ -12,6 +12,8 @@ export interface TrailMarker {
 
 export type GameMode = 'local' | 'cpu_cat' | 'cpu_mouse';
 
+export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
+
 export type Screen =
   | 'menu'
   | 'handoff_to_mouse'
@@ -38,6 +40,7 @@ export interface SearchResult {
 
 export interface GameState {
   mode: GameMode;
+  difficulty: Difficulty; // CPUの強さ（CPU対戦時のみ意味を持つ）
   catName: string;   // ネコ側プレイヤー名（既定: ニャンコ）
   mouseName: string; // ネズミ側プレイヤー名（既定: マウス）
   screen: Screen;

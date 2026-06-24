@@ -5,6 +5,9 @@ interface Props {
   winner: Winner;
   winReason: WinReason;
   onPlayAgain: () => void;
+  catName?: string;
+  mouseName?: string;
+  showNames?: boolean; // 2人対戦時のみ名前で表示
 }
 
 const messages: Record<WinReason, { emoji: string; title: string; sub: string; share: string }> = {
@@ -28,16 +31,21 @@ const messages: Record<WinReason, { emoji: string; title: string; sub: string; s
   },
 };
 
-export default function GameOverScreen({ winner, winReason, onPlayAgain }: Props) {
+export default function GameOverScreen({ winner, winReason, onPlayAgain, catName, mouseName, showNames }: Props) {
   const msg = messages[winReason];
   const isMouseWin = winner === 'mouse';
+
+  // 2人対戦時は勝者の名前で表示
+  const title = showNames
+    ? `${isMouseWin ? (mouseName || 'マウス') : (catName || 'ニャンコ')}さんの勝ち！`
+    : msg.title;
 
   return (
     <div className={`w-full border-t-2 ${isMouseWin ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'}`}>
       <div className="px-4 py-3 flex items-center gap-3">
         <div className="text-4xl animate-bounce-in shrink-0">{msg.emoji}</div>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-gray-800 text-base leading-tight">{msg.title}</p>
+          <p className="font-bold text-gray-800 text-base leading-tight">{title}</p>
           <p className="text-gray-500 text-xs mt-0.5">{msg.sub}</p>
           <p className="text-xs text-gray-400 mt-0.5">↑ ネズミの移動経路</p>
         </div>

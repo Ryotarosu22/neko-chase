@@ -32,9 +32,11 @@ function randomCatPositions(): Position[] {
   return all.slice(0, NUM_CATS);
 }
 
-function createGame(mode: GameMode): GameState {
+function createGame(mode: GameMode, names?: { cat?: string; mouse?: string }): GameState {
   return {
     mode,
+    catName: names?.cat?.trim() || 'ニャンコ',
+    mouseName: names?.mouse?.trim() || 'マウス',
     screen: mode === 'local' || mode === 'cpu_mouse' ? 'handoff_to_cat' : 'handoff_to_mouse',
     mousePosition: null,
     // cpu_cat: randomize immediately; others: human places during cat_setup
@@ -228,8 +230,8 @@ export default function App() {
   }, [game?.screen, game?.round]);
 
   // ── Handlers ──
-  function handleStart(mode: GameMode) {
-    setGame(createGame(mode));
+  function handleStart(mode: GameMode, names?: { cat?: string; mouse?: string }) {
+    setGame(createGame(mode, names));
     setPendingMouseMove(null);
   }
 
@@ -369,18 +371,18 @@ export default function App() {
           />
         </div>
         <div className="shrink-0">
-          <GameOverScreen winner={game.winner} winReason={game.winReason} onPlayAgain={() => setGame(null)} />
+          <GameOverScreen winner={game.winner} winReason={game.winReason} onPlayAgain={() => setGame(null)} catName={game.catName} mouseName={game.mouseName} showNames={game.mode === 'local'} />
         </div>
       </div>
     );
   }
 
   if (game.screen === 'handoff_to_mouse') {
-    return <HandoffScreen to="mouse" onReady={handleHandoffReady} isSetup={game.mousePosition == null} />;
+    return <HandoffScreen to="mouse" onReady={handleHandoffReady} isSetup={game.mousePosition == null} name={game.mouseName} />;
   }
 
   if (game.screen === 'handoff_to_cat') {
-    return <HandoffScreen to="cat" onReady={handleHandoffReady} />;
+    return <HandoffScreen to="cat" onReady={handleHandoffReady} name={game.catName} />;
   }
 
   // Board view

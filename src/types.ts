@@ -38,6 +38,8 @@ export interface SearchResult {
 
 export interface GameState {
   mode: GameMode;
+  catName: string;   // ネコ側プレイヤー名（既定: ニャンコ）
+  mouseName: string; // ネズミ側プレイヤー名（既定: マウス）
   screen: Screen;
   mousePosition: Position | null; // building grid: row/col 0-4
   catPositions: Position[];       // cat-square grid: row/col 0-3

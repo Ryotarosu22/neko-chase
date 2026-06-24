@@ -2,10 +2,12 @@ interface Props {
   to: 'mouse' | 'cat';
   onReady: () => void;
   isSetup?: boolean;
+  name?: string;
 }
 
-export default function HandoffScreen({ to, onReady, isSetup }: Props) {
+export default function HandoffScreen({ to, onReady, isSetup, name }: Props) {
   const isMouse = to === 'mouse';
+  const displayName = name || (isMouse ? 'マウス' : 'ニャンコ');
 
   return (
     <div
@@ -16,9 +18,11 @@ export default function HandoffScreen({ to, onReady, isSetup }: Props) {
       <div className="text-center animate-bounce-in">
         <div className="text-7xl mb-3">{isMouse ? '🐭' : '🐱'}</div>
         <h2 className="text-xl font-bold text-gray-800">
-          {isMouse ? 'ネズミプレイヤーへ' : 'ネコプレイヤーへ'}
+          {displayName}さんの番です
         </h2>
-        <p className="text-sm text-gray-500 mt-1">相手は目を閉じてください</p>
+        <p className="text-sm text-gray-500 mt-1">
+          {isMouse ? 'ネズミ側' : 'ネコ側'}・相手は目を閉じてください
+        </p>
       </div>
 
       <div

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://neko-chase.vercel.app/sitemap.xml

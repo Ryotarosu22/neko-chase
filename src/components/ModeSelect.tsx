@@ -1,5 +1,6 @@
 import { GameMode } from '../types';
 import AffiliateBanner from './AffiliateBanner';
+import ShareButtons from './ShareButtons';
 
 interface Props {
   onStart: (mode: GameMode) => void;
@@ -52,6 +53,8 @@ export default function ModeSelect({ onStart, onPrivacy, onTips }: Props) {
       >
         💡 攻略のコツを読む
       </button>
+
+      <ShareButtons text="🐱🐭ニャンコ探偵とこそ泥ネズミ！チーズを盗んだネズミを3匹のネコで追いつめる無料の推理ボードゲーム。スマホでサクッと遊べるよ🧀" />
 
       <AffiliateBanner variant="full" />
 

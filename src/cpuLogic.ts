@@ -508,10 +508,18 @@ function simCatStepToward(catPositions: Position[], catIndex: number, target: Po
   catPositions[catIndex]);
 }
 
+/** この建物を「今すぐ捜索できる」ネコの数（隣接＝次の猫ターンに捕獲されうる） */
+function searchableByCatsCount(pos: Position, catPositions: Position[]): number {
+  return catPositions.filter((c) =>
+    getBuildingsAtCatSquare(c.row, c.col).some((b) => posEq(b, pos)),
+  ).length;
+}
+
 /**
- * 上級用：1手先読み。各ネコが自分へ1歩寄ってくると仮定し、
- * その後でも安全（自由度が高く猫から遠い）な移動先を選ぶ。
- * さらに直前と同じ方向への移動を軽く減点し、読まれにくくする。
+ * 上級用：捕獲リスクを直接評価する。
+ * - 即時リスク：移動先が今ネコに隣接＝次の猫ターンに捜索されて即捕獲。致命的なので強く回避。
+ * - 1手後リスク：各ネコが寄ってきた後、その建物を捜索できるネコ数。
+ * - 加えて、直進回避・自由度（scoreCpuMouseMove由来）も維持。
  */
 function scoreCpuMouseMoveAdvanced(
   pos: Position,
@@ -522,10 +530,16 @@ function scoreCpuMouseMoveAdvanced(
 ): number {
   let score = scoreCpuMouseMove(pos, currentPos, catPositions, trailMarkers);
 
-  // 1手先読み：全ネコが pos に1歩寄った後の最短距離（遠いほど安全）
+  // 即時捕獲リスク：移動先が今ネコの捜索範囲内なら、次ターンに捜索され捕まる
+  const immediateThreat = searchableByCatsCount(pos, catPositions);
+  score -= immediateThreat * 30;
+
+  // 1手先読み：全ネコが pos へ1歩寄った後、何匹が pos を捜索可能になるか
   const movedCats = catPositions.map((_, i) => simCatStepToward(catPositions, i, pos));
-  const nextDist = minDistToCats(pos, movedCats);
-  score += nextDist * 2;
+  const nextThreat = searchableByCatsCount(pos, movedCats);
+  score -= nextThreat * 6;
+  // 寄ってきた後の最短距離（遠いほど安全）も加味
+  score += minDistToCats(pos, movedCats) * 1.5;
 
   // 直進ペナルティ：前回と同じ方向に進むと読まれやすい
   if (prevPos) {

@@ -397,7 +397,9 @@ export default function App() {
             mousePosition={game.mousePosition}
             catPositions={game.catPositions}
             trailMarkers={game.trailMarkers}
-            showMouse={true}
+            // 逃げ切り時は最終位置にも11個目のチーズを置くので、ネズミは隠さず痕跡を見せる。
+            // 捕獲・袋小路はその場所にネズミがいたことを示すため表示する。
+            showMouse={game.winReason !== 'escaped'}
             showAllTrails={true}
             validMouseMoves={[]}
             selectedMouseMove={null}

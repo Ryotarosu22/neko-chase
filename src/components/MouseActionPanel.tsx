@@ -38,7 +38,7 @@ export default function MouseActionPanel({
             <p className="text-sm text-gray-600 mb-1">
               {t('mouseMoveTap')}
               <span className="text-gray-400 ml-1">
-                {t('turnsLeftPre')}{MAX_ROUNDS - round + 1}{t('turnsLeftSuf')}
+                {t('turnsLeftPre')}{Math.max(1, MAX_ROUNDS - round + 2)}{t('turnsLeftSuf')}
               </span>
             </p>
             {validMoveCount === 0 && (

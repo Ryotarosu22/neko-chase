@@ -118,7 +118,7 @@ export default function App() {
   const validCatMoves =
     isCatSetup && game
       ? unoccupiedCatSquares(game.catPositions)
-      : game?.screen === 'cat_acting' && !isCpuCats(game.mode) && game.selectedCat !== null && game.round < MAX_ROUNDS
+      : game?.screen === 'cat_acting' && !isCpuCats(game.mode) && game.selectedCat !== null && game.round <= MAX_ROUNDS
       ? getValidCatMoves(game.selectedCat, game.catPositions)
       : [];
 
@@ -147,9 +147,10 @@ export default function App() {
         newCats[prev.currentCatIndex] = decision.targetPosition;
         const newRemaining = prev.remainingCats.filter((i) => i !== prev.currentCatIndex);
         if (newRemaining.length === 0) {
-          if (prev.round >= MAX_ROUNDS) {
-            const finalTrail = prev.mousePosition ? [...prev.trailMarkers, { position: prev.mousePosition, turn: prev.trailMarkers.length + 1, discovered: false }] : prev.trailMarkers;
-            return { ...prev, catPositions: newCats, trailMarkers: finalTrail, screen: 'game_over', winner: 'mouse', winReason: 'escaped' };
+          // ネズミは11回移動して11個の痕跡を残す。猫が11ラウンド目の捜索を終えても捕まえられず、
+          // ネズミが最後（11回目）の移動を済ませた次の猫の捜索でも見つからなければ逃げ切り。
+          if (prev.round > MAX_ROUNDS) {
+            return { ...prev, catPositions: newCats, screen: 'game_over', winner: 'mouse', winReason: 'escaped' };
           }
           return { ...prev, catPositions: newCats, remainingCats: [0, 1, 2], screen: 'mouse_moving', currentCatIndex: 0, catSubAction: 'idle', selectedCat: null, round: prev.round + 1 };
         }
@@ -229,9 +230,8 @@ export default function App() {
           return { ...prev, screen: 'game_over', winner: 'cat', winReason: 'caught' };
         }
         if (prev.remainingCats.length === 0) {
-          if (prev.round >= MAX_ROUNDS) {
-            const finalTrail = prev.mousePosition ? [...prev.trailMarkers, { position: prev.mousePosition, turn: prev.trailMarkers.length + 1, discovered: false }] : prev.trailMarkers;
-            return { ...prev, trailMarkers: finalTrail, screen: 'game_over', winner: 'mouse', winReason: 'escaped', searchResult: null };
+          if (prev.round > MAX_ROUNDS) {
+            return { ...prev, screen: 'game_over', winner: 'mouse', winReason: 'escaped', searchResult: null };
           }
           const goToMouse = isCpuMouse(prev.mode) || isCpuCats(prev.mode) ? 'mouse_moving' : 'handoff_to_mouse';
           return { ...prev, screen: goToMouse, remainingCats: [0, 1, 2], currentCatIndex: 0, catSubAction: 'idle', selectedCat: null, round: prev.round + 1, searchResult: null };
@@ -337,9 +337,8 @@ export default function App() {
       newCats[game.selectedCat] = pos;
       const newRemaining = game.remainingCats.filter((i) => i !== game.selectedCat);
       if (newRemaining.length === 0) {
-        if (game.round >= MAX_ROUNDS) {
-          const finalTrail = game.mousePosition ? [...game.trailMarkers, { position: game.mousePosition, turn: game.trailMarkers.length + 1, discovered: false }] : game.trailMarkers;
-          setGame({ ...game, catPositions: newCats, trailMarkers: finalTrail, screen: 'game_over', winner: 'mouse', winReason: 'escaped' });
+        if (game.round > MAX_ROUNDS) {
+          setGame({ ...game, catPositions: newCats, screen: 'game_over', winner: 'mouse', winReason: 'escaped' });
         } else {
           const nextScreen = isCpuMouse(game.mode) ? 'mouse_moving' : 'handoff_to_mouse';
           setGame({ ...game, catPositions: newCats, screen: nextScreen, remainingCats: [0, 1, 2], currentCatIndex: 0, catSubAction: 'idle', selectedCat: null, round: game.round + 1 });
@@ -397,9 +396,8 @@ export default function App() {
             mousePosition={game.mousePosition}
             catPositions={game.catPositions}
             trailMarkers={game.trailMarkers}
-            // 逃げ切り時は最終位置にも11個目のチーズを置くので、ネズミは隠さず痕跡を見せる。
-            // 捕獲・袋小路はその場所にネズミがいたことを示すため表示する。
-            showMouse={game.winReason !== 'escaped'}
+            // ネズミは11回移動して11個の痕跡を残し、最終位置は痕跡とは別。だからネズミも表示する。
+            showMouse={true}
             showAllTrails={true}
             validMouseMoves={[]}
             selectedMouseMove={null}

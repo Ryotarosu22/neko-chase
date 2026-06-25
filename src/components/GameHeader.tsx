@@ -67,7 +67,7 @@ export default function GameHeader({ round, screen, currentCatIndex, onQuit }: P
             <span className="text-blue-600">🐱 {currentCatIndex + 1}</span>
           )}
           {!isMousePhase && !isCatPhase && (
-            <span className="text-xs text-gray-400">T{round}/{MAX_ROUNDS}</span>
+            <span className="text-xs text-gray-400">T{Math.min(round, MAX_ROUNDS)}/{MAX_ROUNDS}</span>
           )}
         </div>
       </div>

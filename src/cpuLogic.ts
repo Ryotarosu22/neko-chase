@@ -276,8 +276,8 @@ function beginnerCatDecision(state: GameState, catIndex: number): CpuCatDecision
   const allKnown = [...trailMarkers.map((m) => m.position), ...knownEmpty];
   const unknown = searchable.filter((b) => !inList(b, allKnown));
 
-  // 最終ターンは必ず捜索
-  if (round >= MAX_ROUNDS) {
+  // 最終捜索ターンは必ず捜索
+  if (round > MAX_ROUNDS) {
     return { action: 'search', searchBuilding: unknown.length ? pickRandom(unknown) : pickRandom(searchable) };
   }
 
@@ -330,8 +330,8 @@ export function getCpuCatDecision(
   const trailPositions = trailMarkers.map((m) => m.position);
   const allKnown = [...trailPositions, ...knownEmpty];
 
-  // Last turn: always search
-  if (round >= MAX_ROUNDS) {
+  // Final search turn (after the mouse's 11th move): always search
+  if (round > MAX_ROUNDS) {
     const unknown = searchable.filter((b) => !inList(b, allKnown));
     return { action: 'search', searchBuilding: unknown[0] ?? searchable[0] };
   }
